@@ -158,7 +158,11 @@ namespace TextBoxEnhance.Tests
             float lowest = float.MaxValue;
             float highest = float.MinValue;
 
-            for (int frame = 0; frame < 150; frame++)
+            // Sampled over a wall-clock window rather than a frame count: batch mode
+            // runs frames far faster than a build, and the wave is driven by time.
+            // The default frequency of 6 rad/s puts one cycle at just over a second.
+            float deadline = Time.unscaledTime + 1.5f;
+            while (Time.unscaledTime < deadline)
             {
                 float y = VertexY(m_Label.textInfo, 0);
                 lowest = Mathf.Min(lowest, y);
