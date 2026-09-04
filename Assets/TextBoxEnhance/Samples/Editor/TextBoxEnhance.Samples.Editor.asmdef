@@ -1,0 +1,22 @@
+{
+    "name": "TextBoxEnhance.Samples.Editor",
+    "rootNamespace": "TextBoxEnhance.Samples.EditorTools",
+    "references": [
+        "TextBoxEnhance.Runtime",
+        "TextBoxEnhance.Samples",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "UnityEditor.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
