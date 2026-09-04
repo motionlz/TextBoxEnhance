@@ -115,9 +115,17 @@ namespace TextBoxEnhance
                 start++;
             }
 
-            // <#FF8800> is TextMeshPro's colour shorthand, not a named tag.
-            if (start >= end || source[start] == '#')
+            if (start >= end)
                 return false;
+
+            // <#FF8800> is TextMeshPro's colour shorthand. It has no name, but it is a
+            // real tag: hand it through as one so it is not counted as visible text.
+            if (source[start] == '#')
+            {
+                name = "#";
+                bodyStart = end;
+                return true;
+            }
 
             int nameEnd = start;
             while (nameEnd < end && source[nameEnd] != '=' && source[nameEnd] != ' ')
@@ -126,7 +134,13 @@ namespace TextBoxEnhance
             if (nameEnd == start)
                 return false;
 
-            for (int k = start; k < nameEnd; k++)
+            // Every rich-text tag starts with a letter, so requiring one keeps "a <3 b>"
+            // literal instead of silently swallowing it and throwing the count off.
+            char first = source[start];
+            if (!((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z')))
+                return false;
+
+            for (int k = start + 1; k < nameEnd; k++)
             {
                 char c = source[k];
                 bool valid = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
@@ -170,7 +184,7 @@ namespace TextBoxEnhance
                 result.Pauses.Add(new PauseMarker
                 {
                     CharIndex = charCount,
-                    Seconds = Mathf.Max(0f, parameters.GetFloat(0.5f, "t", "time", "seconds")),
+                    Seconds = Mathf.Max(0f, parameters.GetPrimaryFloat(0.5f, "t", "time", "seconds")),
                 });
                 return;
             }
@@ -204,7 +218,7 @@ namespace TextBoxEnhance
                 {
                     Start = tag.Start,
                     End = end,
-                    Multiplier = Mathf.Max(0.01f, tag.Parameters.GetFloat(1f, "s", "speed", "x")),
+                    Multiplier = Mathf.Max(0.01f, tag.Parameters.GetPrimaryFloat(1f, "s", "speed", "x")),
                 });
                 return;
             }
