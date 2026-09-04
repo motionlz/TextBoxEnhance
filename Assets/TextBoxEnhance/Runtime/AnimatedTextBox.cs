@@ -90,6 +90,7 @@ namespace TextBoxEnhance
         private bool m_IsRevealing;
         private bool m_CompletedFired;
         private bool m_TextDirty = true;
+        private bool m_RestartPending;
         private bool m_GeometryDirty = true;
         private bool m_Subscribed;
 
@@ -168,10 +169,11 @@ namespace TextBoxEnhance
         {
             m_CharactersPerSecond = Mathf.Max(0f, m_CharactersPerSecond);
             m_RevealDuration = Mathf.Max(0f, m_RevealDuration);
-            m_TextDirty = true;
 
-            if (isActiveAndEnabled && m_Target != null)
-                Rebuild(restart: true);
+            // Rebuilding here would touch the mesh and raise events while Unity is
+            // still deserializing. Flag it instead and let the next frame do the work.
+            m_TextDirty = true;
+            m_RestartPending = true;
         }
 
         /// <summary>Restarts the reveal from the first character.</summary>
@@ -229,8 +231,12 @@ namespace TextBoxEnhance
 
         private void EnsureBuilt()
         {
-            if (m_TextDirty || m_CachedMeshInfo == null)
-                Rebuild(restart: false);
+            if (!m_TextDirty && !m_RestartPending && m_CachedMeshInfo != null)
+                return;
+
+            bool restart = m_RestartPending;
+            m_RestartPending = false;
+            Rebuild(restart);
         }
 
         /// <summary>Re-parses the source text, pushes it into TMP and re-caches its geometry.</summary>
@@ -313,7 +319,7 @@ namespace TextBoxEnhance
             if (useTypewriter && total > 0)
             {
                 m_IsRevealing = true;
-                OnRevealStarted?.Invoke();
+                RaiseRevealStarted();
             }
             else
             {
@@ -341,7 +347,27 @@ namespace TextBoxEnhance
                 return;
 
             m_CompletedFired = true;
-            OnRevealCompleted?.Invoke();
+            RaiseRevealCompleted();
+        }
+
+        // Under [ExecuteAlways] these would otherwise fire while the user is merely
+        // editing the scene, letting listener code change the project by accident.
+        private void RaiseRevealStarted()
+        {
+            if (Application.isPlaying)
+                OnRevealStarted?.Invoke();
+        }
+
+        private void RaiseCharacterRevealed(int index)
+        {
+            if (Application.isPlaying)
+                OnCharacterRevealed?.Invoke(index);
+        }
+
+        private void RaiseRevealCompleted()
+        {
+            if (Application.isPlaying)
+                OnRevealCompleted?.Invoke();
         }
 
         private float SampleTime()
@@ -431,7 +457,7 @@ namespace TextBoxEnhance
                 // Backdate the entrance by the leftover budget so fast text does not
                 // reveal a whole frame's worth of characters in perfect lockstep.
                 RevealCharacter(m_RevealedCount, m_Time - budget);
-                OnCharacterRevealed?.Invoke(m_RevealedCount);
+                RaiseCharacterRevealed(m_RevealedCount);
                 m_RevealedCount++;
             }
 
