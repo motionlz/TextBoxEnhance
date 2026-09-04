@@ -1,0 +1,21 @@
+# Unity YAML assets — use Unity's smart merge (UnityYAMLMerge) where configured
+*.unity      merge=unityyamlmerge eol=lf
+*.prefab     merge=unityyamlmerge eol=lf
+*.asset      merge=unityyamlmerge eol=lf
+*.mat        merge=unityyamlmerge eol=lf
+*.anim       merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+*.meta       merge=unityyamlmerge eol=lf
+
+*.cs         text diff=csharp eol=lf
+
+# Binary assets
+*.png  binary
+*.jpg  binary
+*.psd  binary
+*.wav  binary
+*.mp3  binary
+*.ogg  binary
+*.fbx  binary
+*.ttf  binary
+*.otf  binary
