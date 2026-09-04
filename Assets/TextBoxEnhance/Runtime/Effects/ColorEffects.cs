@@ -11,7 +11,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float frequency = parameters.GetFloat(0.35f, "f", "freq", "speed");
+            float frequency = parameters.GetPrimaryFloat(0.35f, "f", "freq", "speed");
             float spread = parameters.GetFloat(0.06f, "w", "wave", "spread");
             float saturation = parameters.GetFloat(1f, "s", "sat", "saturation");
             float value = parameters.GetFloat(1f, "v", "val", "value");
@@ -30,7 +30,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            Color color = parameters.GetColor("c", Color.white);
+            Color color = parameters.GetPrimaryColor("c", Color.white);
             float weight = Mathf.Clamp01(parameters.GetFloat(1f, "w", "weight"));
             mod.Tint(color, weight);
         }
@@ -44,7 +44,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float min = parameters.GetFloat(0.25f, "min", "lo");
+            float min = parameters.GetPrimaryFloat(0.25f, "min", "lo");
             float max = parameters.GetFloat(1f, "max", "hi");
             float frequency = parameters.GetFloat(2f, "f", "freq", "frequency");
             float waveLength = parameters.GetFloat(0.4f, "w", "wave", "length");
@@ -64,7 +64,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float frequency = parameters.GetFloat(3f, "f", "freq", "frequency");
+            float frequency = parameters.GetPrimaryFloat(3f, "f", "freq", "frequency");
             float duty = Mathf.Clamp01(parameters.GetFloat(0.5f, "duty", "d"));
             float offAlpha = parameters.GetFloat(0f, "min", "off");
 

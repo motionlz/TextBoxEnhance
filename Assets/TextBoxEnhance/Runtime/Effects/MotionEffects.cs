@@ -21,7 +21,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetFloat(0.15f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.15f, "a", "amp", "amplitude");
             float frequency = parameters.GetFloat(6f, "f", "freq", "frequency");
             float waveLength = parameters.GetFloat(0.6f, "w", "wave", "length");
 
@@ -39,7 +39,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetFloat(0.06f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.06f, "a", "amp", "amplitude");
             float frequency = parameters.GetFloat(25f, "f", "freq", "frequency");
 
             // Quantising time is what makes this read as a rattle rather than a drift.
@@ -57,7 +57,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetFloat(0.1f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.1f, "a", "amp", "amplitude");
             float frequency = parameters.GetFloat(1.5f, "f", "freq", "frequency");
 
             float seed = context.Seed * 100f;
@@ -76,7 +76,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetFloat(0.05f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.05f, "a", "amp", "amplitude");
 
             int step = Time.frameCount;
             mod.Offset.x += (EffectMath.Random01(context.CharIndex, step, 2) - 0.5f) * 2f * amplitude;
@@ -92,7 +92,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetFloat(0.25f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.25f, "a", "amp", "amplitude");
             float frequency = parameters.GetFloat(6f, "f", "freq", "frequency");
             float waveLength = parameters.GetFloat(0.6f, "w", "wave", "length");
 
@@ -109,7 +109,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float angle = parameters.GetFloat(12f, "a", "angle", "amplitude");
+            float angle = parameters.GetPrimaryFloat(12f, "a", "angle", "amplitude");
             float frequency = parameters.GetFloat(4f, "f", "freq", "frequency");
             float waveLength = parameters.GetFloat(0.5f, "w", "wave", "length");
 
@@ -126,7 +126,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amount = parameters.GetFloat(0.15f, "a", "amp", "amount");
+            float amount = parameters.GetPrimaryFloat(0.15f, "a", "amp", "amount");
             float frequency = parameters.GetFloat(5f, "f", "freq", "frequency");
             float waveLength = parameters.GetFloat(0.4f, "w", "wave", "length");
 

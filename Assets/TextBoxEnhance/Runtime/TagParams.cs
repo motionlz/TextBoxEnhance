@@ -34,31 +34,53 @@ namespace TextBoxEnhance
         }
 
         /// <summary>
-        /// Reads a float attribute, accepting any of <paramref name="keys"/> as its name and
-        /// falling back to the <c>&lt;tag=value&gt;</c> shorthand when none is present.
+        /// Reads a float attribute written by name, accepting any of
+        /// <paramref name="keys"/> as its spelling.
         /// </summary>
         public float GetFloat(float fallback, params string[] keys)
         {
             foreach (string key in keys)
             {
-                string raw = GetString(key);
-                if (raw != null && float.TryParse(raw, System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+                if (TryParseFloat(GetString(key), out float parsed))
                     return parsed;
             }
-
-            if (Value != null && float.TryParse(Value, System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out float shorthand))
-                return shorthand;
 
             return fallback;
         }
 
         /// <summary>
-        /// Reads a colour attribute, falling back to the <c>&lt;tag=value&gt;</c> shorthand.
-        /// Accepts named colours ("red"), and hex with or without the leading "#".
+        /// Reads the effect's headline attribute, which is also what the
+        /// <c>&lt;tag=value&gt;</c> shorthand sets. Only one attribute per effect may use
+        /// this, or <c>&lt;wave=0.5&gt;</c> would set every attribute to 0.5 at once.
         /// </summary>
-        public Color GetColor(string key, Color fallback)
+        public float GetPrimaryFloat(float fallback, params string[] keys)
+        {
+            foreach (string key in keys)
+            {
+                if (TryParseFloat(GetString(key), out float parsed))
+                    return parsed;
+            }
+
+            return TryParseFloat(Value, out float shorthand) ? shorthand : fallback;
+        }
+
+        private static bool TryParseFloat(string raw, out float value)
+        {
+            if (!string.IsNullOrEmpty(raw))
+            {
+                return float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out value);
+            }
+
+            value = 0f;
+            return false;
+        }
+
+        /// <summary>
+        /// Reads the effect's headline colour, which the <c>&lt;tag=value&gt;</c> shorthand
+        /// also sets. Accepts named colours ("red") and hex with or without the "#".
+        /// </summary>
+        public Color GetPrimaryColor(string key, Color fallback)
         {
             string raw = GetString(key) ?? Value;
             if (string.IsNullOrEmpty(raw))
