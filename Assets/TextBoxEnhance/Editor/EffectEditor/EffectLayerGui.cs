@@ -110,13 +110,13 @@ namespace TextBoxEnhance.EditorTools
         }
 
         /// <summary>
-        /// Where the slider's track ends. Sized at roughly three times the largest
-        /// preset, so the values people actually use spread across the track instead of
-        /// bunching against the left edge. Typing past it still works.
+        /// Where the slider's track ends. Kept wide on purpose: the track bends rather
+        /// than shortens, so the everyday values already sit a quarter to two fifths of
+        /// the way along without putting a big value out of reach.
         /// </summary>
         private static float AmountSoftMax(EffectChannel channel)
         {
-            return channel == EffectChannel.Rotation ? 45f : 0.4f;
+            return channel == EffectChannel.Rotation ? 180f : 1f;
         }
 
         private static void DrawColour(SerializedProperty layer, bool advanced)
