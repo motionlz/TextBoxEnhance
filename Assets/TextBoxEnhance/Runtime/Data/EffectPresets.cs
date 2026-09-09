@@ -24,8 +24,14 @@ namespace TextBoxEnhance.Data
             /// <summary>Label shown on the button.</summary>
             public readonly string Name;
 
-            /// <summary>Tag the built-in equivalent answers to.</summary>
+            /// <summary>
+            /// The coded effect this preset reproduces, or null for one that has no
+            /// single-tag equivalent -- a combination only the layer system can express.
+            /// </summary>
             public readonly string BuiltInTag;
+
+            /// <summary>True for a preset that stands in for a built-in tag.</summary>
+            public bool ReproducesABuiltIn => !string.IsNullOrEmpty(BuiltInTag);
 
             /// <summary>Builds a fresh layer stack. Never returns a shared instance.</summary>
             public readonly Func<List<EffectLayer>> Build;
@@ -51,6 +57,15 @@ namespace TextBoxEnhance.Data
             new Preset("Tint", "tint", Tint),
             new Preset("Fade", "fade", Fade),
             new Preset("Blink", "blink", Blink),
+
+            // No single tag does these. They are the argument for layers: two or three
+            // simple motions on different channels read as one deliberate effect.
+            new Preset("Float", null, Float),
+            new Preset("Heartbeat", null, Heartbeat),
+            new Preset("Fire", null, Fire),
+            new Preset("Glitch", null, Glitch),
+            new Preset("Whisper", null, Whisper),
+            new Preset("Rise", null, Rise),
         };
 
         public static IReadOnlyList<Preset> All => s_All;
@@ -199,6 +214,137 @@ namespace TextBoxEnhance.Data
                 Speed = 3f,
                 Duty = 0.5f,
             });
+        }
+
+        /// <summary>Idle drift: never still, never going anywhere.</summary>
+        public static List<EffectLayer> Float()
+        {
+            return new List<EffectLayer>
+            {
+                new EffectLayer
+                {
+                    Channel = EffectChannel.OffsetY, Motion = EffectMotion.Drift,
+                    Min = -0.04f, Max = 0.04f, Speed = 0.6f, Salt = 0,
+                },
+                new EffectLayer
+                {
+                    Channel = EffectChannel.Rotation, Motion = EffectMotion.Drift,
+                    Min = -3f, Max = 3f, Speed = 0.4f, Salt = 5,
+                },
+            };
+        }
+
+        /// <summary>Two thumps and a rest, which is what a curve is for.</summary>
+        public static List<EffectLayer> Heartbeat()
+        {
+            var beat = new AnimationCurve(
+                new Keyframe(0f, 0f),
+                new Keyframe(0.10f, 1f),
+                new Keyframe(0.22f, 0f),
+                new Keyframe(0.32f, 0.55f),
+                new Keyframe(0.45f, 0f),
+                new Keyframe(1f, 0f));
+
+            return One(new EffectLayer
+            {
+                Channel = EffectChannel.Scale, Motion = EffectMotion.Curve,
+                Min = 1f, Max = 1.12f, Speed = 0.8f, Curve = beat,
+            });
+        }
+
+        /// <summary>Heat: colour running through the flame, and the letters lifting with it.</summary>
+        public static List<EffectLayer> Fire()
+        {
+            var flame = new Gradient();
+            flame.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(1f, 0.25f, 0.05f), 0f),
+                    new GradientColorKey(new Color(1f, 0.55f, 0.10f), 0.45f),
+                    new GradientColorKey(new Color(1f, 0.90f, 0.35f), 0.75f),
+                    new GradientColorKey(new Color(1f, 0.35f, 0.05f), 1f),
+                },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+
+            return new List<EffectLayer>
+            {
+                new EffectLayer
+                {
+                    Channel = EffectChannel.Colour, Motion = EffectMotion.Ramp,
+                    ColourMode = ColourMode.Gradient, Gradient = flame,
+                    Min = 0f, Max = 1f, Speed = 0.9f, Spread = 0.12f, Weight = 1f,
+                },
+                new EffectLayer
+                {
+                    Channel = EffectChannel.OffsetY, Motion = EffectMotion.Drift,
+                    Min = -0.02f, Max = 0.05f, Speed = 2.5f, Salt = 3,
+                },
+            };
+        }
+
+        /// <summary>A broken signal: position, visibility and colour all misbehaving.</summary>
+        public static List<EffectLayer> Glitch()
+        {
+            return new List<EffectLayer>
+            {
+                new EffectLayer
+                {
+                    Channel = EffectChannel.OffsetX, Motion = EffectMotion.Shake,
+                    Min = -0.05f, Max = 0.05f, Speed = 14f, Salt = 0,
+                },
+                new EffectLayer
+                {
+                    Channel = EffectChannel.Alpha, Motion = EffectMotion.Blink,
+                    Min = 0.35f, Max = 1f, Speed = 7.5f, Duty = 0.85f,
+                },
+                new EffectLayer
+                {
+                    Channel = EffectChannel.Colour, Motion = EffectMotion.Shake,
+                    ColourMode = ColourMode.HueSweep, Min = 0.45f, Max = 0.6f,
+                    Speed = 11f, Saturation = 0.7f, Value = 1f, Weight = 0.5f, Salt = 7,
+                },
+            };
+        }
+
+        /// <summary>Barely there, and slowly moving. For something half heard.</summary>
+        public static List<EffectLayer> Whisper()
+        {
+            return new List<EffectLayer>
+            {
+                new EffectLayer
+                {
+                    Channel = EffectChannel.Alpha, Motion = EffectMotion.Sine,
+                    Min = 0.25f, Max = 0.6f, Speed = 0.35f, Spread = 0.05f,
+                },
+                new EffectLayer
+                {
+                    Channel = EffectChannel.OffsetY, Motion = EffectMotion.Drift,
+                    Min = -0.03f, Max = 0.03f, Speed = 0.5f, Salt = 2,
+                },
+            };
+        }
+
+        /// <summary>
+        /// Plays once as the typewriter reaches each letter rather than looping: the
+        /// letter climbs into place and stays there. Timebase is what makes that
+        /// possible, and nothing with a single tag can do it.
+        /// </summary>
+        public static List<EffectLayer> Rise()
+        {
+            var settle = new AnimationCurve(
+                new Keyframe(0f, 1f),
+                new Keyframe(0.6f, 0.1f),
+                new Keyframe(1f, 0f));
+
+            return new List<EffectLayer>
+            {
+                new EffectLayer
+                {
+                    Channel = EffectChannel.OffsetY, Motion = EffectMotion.Curve,
+                    Timebase = EffectTimebase.RevealProgress,
+                    Min = 0f, Max = 0.35f, Speed = 1f, Curve = settle,
+                },
+            };
         }
 
         private static List<EffectLayer> One(EffectLayer layer)

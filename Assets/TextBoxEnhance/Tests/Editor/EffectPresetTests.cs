@@ -59,6 +59,12 @@ namespace TextBoxEnhance.Tests
             [ValueSource(nameof(PresetNames))] string presetName)
         {
             EffectPresets.Preset preset = FindPreset(presetName);
+
+            // Some presets are combinations no single tag can express; there is nothing
+            // for them to be compared against.
+            if (!preset.ReproducesABuiltIn)
+                Assert.Pass($"{preset.Name} has no built-in counterpart");
+
             Assert.IsTrue(TextEffectRegistry.TryGet(preset.BuiltInTag, out TextEffect builtIn),
                 $"<{preset.BuiltInTag}> is not registered");
 
