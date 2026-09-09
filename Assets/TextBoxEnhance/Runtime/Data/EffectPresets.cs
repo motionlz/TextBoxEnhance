@@ -67,8 +67,8 @@ namespace TextBoxEnhance.Data
                 Channel = EffectChannel.OffsetY,
                 Motion = EffectMotion.Sine,
                 Timebase = EffectTimebase.Time,
-                Min = -0.05f,
-                Max = 0.05f,
+                Min = -0.03f,
+                Max = 0.03f,
                 Speed = 1f,
                 Spread = 0.1f,
                 Duty = 0.5f,
@@ -83,8 +83,8 @@ namespace TextBoxEnhance.Data
             {
                 Channel = EffectChannel.OffsetY,
                 Motion = EffectMotion.Sine,
-                Min = -0.15f,
-                Max = 0.15f,
+                Min = -0.05f,
+                Max = 0.05f,
                 Speed = 6f / Tau,
                 Spread = 0.6f / Tau,
             });
@@ -92,17 +92,17 @@ namespace TextBoxEnhance.Data
 
         public static List<EffectLayer> Shake()
         {
-            return Pair(EffectMotion.Shake, -0.06f, 0.06f, speed: 25f, spread: 0f, saltX: 0, saltY: 1);
+            return Pair(EffectMotion.Shake, -0.02f, 0.02f, speed: 25f, spread: 0f, saltX: 0, saltY: 1);
         }
 
         public static List<EffectLayer> Wobble()
         {
-            return Pair(EffectMotion.Drift, -0.1f, 0.1f, speed: 1.5f, spread: 0f, saltX: 0, saltY: 1);
+            return Pair(EffectMotion.Drift, -0.033f, 0.033f, speed: 1.5f, spread: 0f, saltX: 0, saltY: 1);
         }
 
         public static List<EffectLayer> Jitter()
         {
-            return Pair(EffectMotion.Jitter, -0.05f, 0.05f, speed: 1f, spread: 0f, saltX: 2, saltY: 3);
+            return Pair(EffectMotion.Jitter, -0.017f, 0.017f, speed: 1f, spread: 0f, saltX: 2, saltY: 3);
         }
 
         public static List<EffectLayer> Bounce()
@@ -112,7 +112,7 @@ namespace TextBoxEnhance.Data
                 Channel = EffectChannel.OffsetY,
                 Motion = EffectMotion.Bounce,
                 Min = 0f,
-                Max = 0.25f,
+                Max = 0.083f,
                 Speed = 6f / Mathf.PI,
                 Spread = 0.6f / Mathf.PI,
             });
@@ -124,8 +124,8 @@ namespace TextBoxEnhance.Data
             {
                 Channel = EffectChannel.Rotation,
                 Motion = EffectMotion.Sine,
-                Min = -12f,
-                Max = 12f,
+                Min = -4f,
+                Max = 4f,
                 Speed = 4f / Tau,
                 Spread = 0.5f / Tau,
             });
@@ -137,8 +137,8 @@ namespace TextBoxEnhance.Data
             {
                 Channel = EffectChannel.Scale,
                 Motion = EffectMotion.Sine,
-                Min = 0.85f,
-                Max = 1.15f,
+                Min = 0.95f,
+                Max = 1.05f,
                 Speed = 5f / Tau,
                 Spread = 0.4f / Tau,
             });
