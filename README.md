@@ -53,6 +53,9 @@ An effect is a stack of **layers**. Each moves one thing — sideways, up and do
 rotation, size, opacity or colour — in one way: sine, bounce, drift, shake, jitter,
 ramp, blink, or a curve you draw.
 
+Presets come in two kinds: one per built-in tag, and combinations no single tag can do —
+Float, Heartbeat, Fire, Glitch, Whisper, Rise.
+
 ## Thai and other scripts with marks
 
 Thai writes a syllable as a consonant plus vowels and tone marks with no width of their
