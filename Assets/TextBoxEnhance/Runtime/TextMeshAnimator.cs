@@ -64,6 +64,20 @@ namespace TextBoxEnhance
         public static bool Apply(TMP_Text target, TMP_MeshInfo[] cache, List<EffectRange> effects,
             float time, float deltaTime, ICharacterRevealSource revealSource, in RevealSettings reveal)
         {
+            return Apply(target, cache, effects, time, deltaTime, revealSource, reveal,
+                ClusterMap.OnePerCharacter);
+        }
+
+        /// <summary>
+        /// Restores the original geometry, lays this frame's animation over it and
+        /// uploads the result, treating each cluster in <paramref name="clusters"/> as
+        /// one letter.
+        /// </summary>
+        /// <returns>False if the cache was stale and nothing was drawn.</returns>
+        public static bool Apply(TMP_Text target, TMP_MeshInfo[] cache, List<EffectRange> effects,
+            float time, float deltaTime, ICharacterRevealSource revealSource, in RevealSettings reveal,
+            in ClusterMap clusters)
+        {
             if (!Restore(target, cache))
                 return false;
 
@@ -91,6 +105,13 @@ namespace TextBoxEnhance
                     continue;
                 }
 
+                // A combining mark takes its phase, its randomness and its pivot from the
+                // character it sits on. Give it its own and it drifts off the letter it
+                // belongs to, which is what animating Thai one code point at a time looks
+                // like.
+                int cluster = clusters.ClusterFor(c);
+                int anchorIndex = clusters.BaseFor(c);
+
                 CharacterMod mod = CharacterMod.Identity;
                 RevealAnimator.Apply(reveal.Style, reveal.Shape(progress), reveal.Distance, reveal.Spins, ref mod);
 
@@ -99,20 +120,40 @@ namespace TextBoxEnhance
                     for (int e = 0; e < effects.Count; e++)
                     {
                         EffectRange range = effects[e];
-                        if (c < range.Start || c >= range.End)
+
+                        // Tested against the base so a tag can never take half a letter.
+                        if (anchorIndex < range.Start || anchorIndex >= range.End)
                             continue;
 
-                        var context = new TextEffectContext(textInfo, c, c - range.Start,
+                        var context = new TextEffectContext(textInfo, cluster, anchorIndex - range.Start,
                             range.End - range.Start, time, deltaTime, progress);
                         range.Effect.Apply(in context, range.Parameters, ref mod);
                     }
                 }
 
-                BakeCharacter(vertices, colors, vertexIndex, character, ref mod);
+                BakeCharacter(textInfo, cache, vertices, colors, vertexIndex, character, anchorIndex, ref mod);
             }
 
             target.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
             return true;
+        }
+
+        /// <summary>
+        /// The horizontal middle of the base character as TextMeshPro laid it out,
+        /// falling back to the character's own middle when the base has no geometry --
+        /// a mark after a space, and other text nobody meant to write.
+        /// </summary>
+        private static float AnchorCentreX(TMP_MeshInfo[] cache, TMP_CharacterInfo anchor,
+            Vector3[] vertices, int vertexIndex)
+        {
+            if (anchor.isVisible && cache != null && anchor.materialReferenceIndex < cache.Length)
+            {
+                Vector3[] original = cache[anchor.materialReferenceIndex].vertices;
+                if (original != null && anchor.vertexIndex + 3 < original.Length)
+                    return (original[anchor.vertexIndex].x + original[anchor.vertexIndex + 2].x) * 0.5f;
+            }
+
+            return (vertices[vertexIndex].x + vertices[vertexIndex + 2].x) * 0.5f;
         }
 
         private static void HideCharacter(Color32[] colors, int vertexIndex)
@@ -126,17 +167,24 @@ namespace TextBoxEnhance
         }
 
         /// <summary>Writes one character's accumulated offsets into the TMP vertex arrays.</summary>
-        private static void BakeCharacter(Vector3[] vertices, Color32[] colors, int vertexIndex,
-            TMP_CharacterInfo character, ref CharacterMod mod)
+        private static void BakeCharacter(TMP_TextInfo textInfo, TMP_MeshInfo[] cache,
+            Vector3[] vertices, Color32[] colors, int vertexIndex,
+            TMP_CharacterInfo character, int anchorIndex, ref CharacterMod mod)
         {
-            // Offsets arrive in em, so a 12pt and a 120pt label animate identically.
-            float em = character.pointSize > 0f ? character.pointSize : 1f;
+            TMP_CharacterInfo anchor = textInfo.characterInfo[anchorIndex];
 
-            // Rotate and scale around the character's own baseline centre, which is where
-            // a reader expects a letter to pivot.
+            // Offsets arrive in em, so a 12pt and a 120pt label animate identically.
+            float em = anchor.pointSize > 0f ? anchor.pointSize : 1f;
+
+            // Rotate and scale around the base character's baseline centre, which is
+            // where a reader expects a letter to pivot -- and, for a combining mark, the
+            // only pivot that keeps it sitting on the letter it belongs to.
+            //
+            // Read from the cache rather than the working arrays: the base character was
+            // baked earlier this frame, so its live vertices have already moved.
             var pivot = new Vector3(
-                (vertices[vertexIndex].x + vertices[vertexIndex + 2].x) * 0.5f,
-                character.baseLine,
+                AnchorCentreX(cache, anchor, vertices, vertexIndex),
+                anchor.baseLine,
                 0f);
 
             var matrix = Matrix4x4.TRS(
