@@ -62,6 +62,30 @@ namespace TextBoxEnhance.Data
         Constant = 8,
     }
 
+    /// <summary>
+    /// Which part of a letter a layer moves, for scripts that write a letter as a base
+    /// plus marks that sit on it.
+    /// </summary>
+    /// <remarks>
+    /// A Thai reader parses a syllable as one shape, so a tone mark drifting off its
+    /// consonant reads as broken text rather than as style -- and a mark that wanders
+    /// towards the next consonant can be read as belonging to that one instead. Worth
+    /// reaching for on a single word, a title or a damage number; not on body text.
+    /// </remarks>
+    public enum LayerTarget
+    {
+        /// <summary>The base and its marks move as one shape. The readable default.</summary>
+        WholeLetter = 0,
+
+        /// <summary>Only the base moves, sliding out from under its marks.</summary>
+        BaseLetterOnly = 1,
+
+        /// <summary>
+        /// Only the marks move, each with a phase of its own, over a base that stays put.
+        /// </summary>
+        MarksOnly = 2,
+    }
+
     /// <summary>What drives a layer's motion.</summary>
     public enum EffectTimebase
     {

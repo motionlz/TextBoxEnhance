@@ -12,7 +12,11 @@ namespace TextBoxEnhance
         /// <summary>Laid-out text being animated. Read-only as far as effects are concerned.</summary>
         public readonly TMP_TextInfo TextInfo;
 
-        /// <summary>Index of this character within the whole label.</summary>
+        /// <summary>
+        /// Which letter this is, counting a base and the marks on it as one. This is what
+        /// drives an effect's phase, so a Thai vowel travels with its consonant instead
+        /// of a step behind it.
+        /// </summary>
         public readonly int CharIndex;
 
         /// <summary>Index of this character within the tag's range, starting at 0.</summary>
@@ -34,8 +38,28 @@ namespace TextBoxEnhance
         /// </summary>
         public readonly float RevealProgress;
 
+        /// <summary>
+        /// Where this character sits among everything TextMeshPro laid out, counting
+        /// marks separately. Use it in place of <see cref="CharIndex"/> when marks are
+        /// meant to move on their own rather than with the letter they belong to.
+        /// </summary>
+        public readonly int CharacterIndex;
+
+        /// <summary>
+        /// True for a vowel or tone mark hanging off the character before it, rather
+        /// than a letter standing on its own.
+        /// </summary>
+        public readonly bool IsMark;
+
         public TextEffectContext(TMP_TextInfo textInfo, int charIndex, int indexInRange, int rangeLength,
             float time, float deltaTime, float revealProgress)
+            : this(textInfo, charIndex, indexInRange, rangeLength, time, deltaTime, revealProgress,
+                charIndex, false)
+        {
+        }
+
+        public TextEffectContext(TMP_TextInfo textInfo, int charIndex, int indexInRange, int rangeLength,
+            float time, float deltaTime, float revealProgress, int characterIndex, bool isMark)
         {
             TextInfo = textInfo;
             CharIndex = charIndex;
@@ -44,6 +68,8 @@ namespace TextBoxEnhance
             Time = time;
             DeltaTime = deltaTime;
             RevealProgress = revealProgress;
+            CharacterIndex = characterIndex;
+            IsMark = isMark;
         }
 
         /// <summary>Character info for the character being animated.</summary>

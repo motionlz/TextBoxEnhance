@@ -37,6 +37,15 @@ namespace TextBoxEnhance
         }
 
         /// <summary>
+        /// True for a character that hangs off the one before it rather than standing on
+        /// its own -- a Thai vowel or tone mark, a Latin combining accent.
+        /// </summary>
+        public bool IsMark(int charIndex)
+        {
+            return BaseFor(charIndex) != charIndex;
+        }
+
+        /// <summary>
         /// The character that leads a character's cluster: itself, unless it is a mark
         /// hanging off the one before it.
         /// </summary>
