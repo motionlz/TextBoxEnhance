@@ -38,6 +38,12 @@ box.OnRevealCompleted.AddListener(() => showContinuePrompt = true);
 box.SkipToEnd();   // the click-to-continue half of a dialogue box
 ```
 
+<img src="docs/images/inspector.png" alt="The Animated Text Box inspector" width="420">
+
+Every tag the project knows is listed on the component, with your own effects kept
+separate from the built-in ones — the only place to check that an effect you authored
+actually registered.
+
 Distances are in **em**, a fraction of the font size, so an effect looks the same on a
 12pt label and a 120pt one.
 
