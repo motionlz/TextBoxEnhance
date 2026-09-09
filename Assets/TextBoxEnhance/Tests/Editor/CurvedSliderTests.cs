@@ -1,0 +1,133 @@
+using NUnit.Framework;
+using TextBoxEnhance.EditorTools;
+using UnityEngine;
+
+namespace TextBoxEnhance.Tests
+{
+    /// <summary>
+    /// The slider's whole reason for existing is where it puts the small values, and
+    /// its whole failure mode is a track that argues with the number on it. Both are
+    /// pinned down here.
+    /// </summary>
+    public sealed class CurvedSliderTests
+    {
+        private const float Response = CurvedSlider.Response;
+
+        [Test]
+        public void HalfTheTrackCoversAQuarterOfTheRange()
+        {
+            // What squaring the response buys: the small values get the long half.
+            Assert.AreEqual(0.25f, CurvedSlider.ToValue(0.5f, 0f, 1f, Response), 1e-4f);
+        }
+
+        [Test]
+        public void PositionAndValueAreExactInverses()
+        {
+            foreach (float value in new[] { 0f, 0.02f, 0.06f, 0.15f, 0.5f, 1f })
+            {
+                float position = CurvedSlider.ToPosition(value, 0f, 1f, Response);
+                Assert.AreEqual(value, CurvedSlider.ToValue(position, 0f, 1f, Response), 1e-4f,
+                    $"round trip failed for {value}");
+            }
+        }
+
+        [Test]
+        public void PresetValuesLandWellClearOfTheLeftEdge()
+        {
+            // The complaint that prompted the curve: every preset sat inside the first
+            // sixth of the track, where a pixel of travel was most of the useful range.
+            var presets = new (string Name, float Value, float Limit)[]
+            {
+                ("jitter", 0.05f, 1f),
+                ("shake", 0.06f, 1f),
+                ("swing", 12f, 180f),
+                ("wave", 0.15f, 1f),
+            };
+
+            foreach ((string name, float value, float limit) in presets)
+            {
+                float position = CurvedSlider.ToPosition(value, 0f, limit, Response);
+
+                Assert.Greater(position, 0.2f, $"{name} is still bunched against the left edge");
+                Assert.Less(position, 0.6f, $"{name} has been pushed too far along the track");
+            }
+        }
+
+        [Test]
+        public void TheEndOfTheTrackIsTheLimitAndStaysThere()
+        {
+            // The bug this replaced: dragging to the end raised the value, which raised
+            // the end, which let the next drag raise it again -- for ever.
+            float atEnd = CurvedSlider.ToValue(1f, 0f, 1f, Response);
+            Assert.AreEqual(1f, atEnd, 1e-4f);
+
+            float stillAtEnd = CurvedSlider.ToPosition(atEnd, 0f, 1f, Response);
+            Assert.AreEqual(1f, stillAtEnd, 1e-4f, "the handle moved even though the value did not");
+        }
+
+        [Test]
+        public void ValuesBeyondTheLimitAreBroughtBack()
+        {
+            Assert.AreEqual(1f, CurvedSlider.ToPosition(5f, 0f, 1f, Response), 1e-4f);
+            Assert.AreEqual(0f, CurvedSlider.ToPosition(-5f, 0f, 1f, Response), 1e-4f);
+        }
+
+        [Test]
+        public void ZeroSitsAtTheMiddleOfASymmetricTrack()
+        {
+            Assert.AreEqual(0.5f, CurvedSlider.ToPosition(0f, -8f, 8f, Response), 1e-4f);
+            Assert.AreEqual(0f, CurvedSlider.ToValue(0.5f, -8f, 8f, Response), 1e-4f);
+        }
+
+        [Test]
+        public void ASymmetricTrackCurvesOutwardFromZeroBothWays()
+        {
+            // Negative speed runs an effect backwards, and deserves the same fine
+            // control near zero that the positive side gets.
+            float positive = CurvedSlider.ToValue(0.75f, -8f, 8f, Response);
+            float negative = CurvedSlider.ToValue(0.25f, -8f, 8f, Response);
+
+            Assert.AreEqual(2f, positive, 1e-3f, "half of the positive side should be a quarter of it");
+            Assert.AreEqual(-2f, negative, 1e-3f, "the negative side should mirror the positive one");
+        }
+
+        [Test]
+        public void SymmetricPositionAndValueAreExactInverses()
+        {
+            foreach (float value in new[] { -8f, -3f, -0.2f, 0f, 0.2f, 3f, 8f })
+            {
+                float position = CurvedSlider.ToPosition(value, -8f, 8f, Response);
+                Assert.AreEqual(value, CurvedSlider.ToValue(position, -8f, 8f, Response), 1e-3f,
+                    $"round trip failed for {value}");
+            }
+        }
+
+        [Test]
+        public void ACollapsedRangeDoesNotDivideByZero()
+        {
+            Assert.AreEqual(0f, CurvedSlider.ToPosition(0f, 0f, 0f, Response), 1e-4f);
+            Assert.IsFalse(float.IsNaN(CurvedSlider.ToValue(0.5f, 0f, 0f, Response)));
+        }
+
+        [Test]
+        public void EveryPresetSpeedFitsInsideItsTrack()
+        {
+            // A limit that clipped a preset would quietly change what the presets do.
+            foreach (Data.EffectPresets.Preset preset in Data.EffectPresets.All)
+            {
+                foreach (Data.EffectLayer layer in preset.Build())
+                {
+                    float limit = layer.Motion == Data.EffectMotion.Shake
+                                  || layer.Motion == Data.EffectMotion.Jitter ? 60f : 8f;
+
+                    Assert.LessOrEqual(Mathf.Abs(layer.Speed), limit,
+                        $"{preset.Name} speed {layer.Speed} does not fit a track of {limit}");
+                    Assert.LessOrEqual(Mathf.Abs(layer.Spread), 1f, $"{preset.Name} spread does not fit");
+                    Assert.LessOrEqual((layer.Max - layer.Min) * 0.5f,
+                        layer.Channel == Data.EffectChannel.Rotation ? 180f : 1f,
+                        $"{preset.Name} amount does not fit");
+                }
+            }
+        }
+    }
+}

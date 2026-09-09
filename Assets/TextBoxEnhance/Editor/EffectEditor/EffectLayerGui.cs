@@ -80,7 +80,7 @@ namespace TextBoxEnhance.EditorTools
             float centre = (min.floatValue + max.floatValue) * 0.5f;
             float reach = (max.floatValue - min.floatValue) * 0.5f;
 
-            reach = Mathf.Max(0f, SoftRangeSlider.Draw(AmountLabel(channel), reach, 0f, AmountSoftMax(channel)));
+            reach = CurvedSlider.Draw(AmountLabel(channel), reach, 0f, AmountLimit(channel));
 
             if (advanced)
             {
@@ -110,13 +110,23 @@ namespace TextBoxEnhance.EditorTools
         }
 
         /// <summary>
-        /// Where the slider's track ends. Kept wide on purpose: the track bends rather
-        /// than shortens, so the everyday values already sit a quarter to two fifths of
-        /// the way along without putting a big value out of reach.
+        /// Where the slider's track ends. Wide enough that nothing sensible is out of
+        /// reach -- a full font size of travel, or half a turn -- and the curve is what
+        /// keeps the small end usable rather than a short track.
         /// </summary>
-        private static float AmountSoftMax(EffectChannel channel)
+        private static float AmountLimit(EffectChannel channel)
         {
             return channel == EffectChannel.Rotation ? 180f : 1f;
+        }
+
+        /// <summary>
+        /// Speed means different things to different motions: a rattle counts re-rolls
+        /// per second and runs at 25, while a wave counts cycles and runs near 1. One
+        /// track for both would leave the wave pinned to the left edge.
+        /// </summary>
+        private static float SpeedLimit(EffectMotion motion)
+        {
+            return motion == EffectMotion.Shake || motion == EffectMotion.Jitter ? 60f : 8f;
         }
 
         private static void DrawColour(SerializedProperty layer, bool advanced)
@@ -157,18 +167,22 @@ namespace TextBoxEnhance.EditorTools
 
             if (motion != EffectMotion.Jitter)
             {
-                SoftRangeSlider.Draw(layer.FindPropertyRelative("Speed"),
-                    new GUIContent(SpeedLabel(motion), "Times per second. Type a negative to run it backwards."),
-                    0f, 4f);
+                CurvedSlider.Draw(layer.FindPropertyRelative("Speed"),
+                    new GUIContent(SpeedLabel(motion), "Times per second."),
+                    0f, SpeedLimit(motion));
             }
 
             if (UsesSpread(motion))
             {
-                SoftRangeSlider.Draw(layer.FindPropertyRelative("Spread"),
+                // The only signed control here: which way a wave travels is a real
+                // choice, where a negative speed would just mirror a symmetric motion
+                // onto itself. Zero sits at the middle and the fine control radiates
+                // out from it in both directions.
+                CurvedSlider.Draw(layer.FindPropertyRelative("Spread"),
                     new GUIContent("Offset per letter",
                         "Delays each letter behind the one before it. This is what makes a wave travel. " +
                         "Negative sends it the other way."),
-                    0f, 0.5f);
+                    -1f, 1f);
             }
 
             if (motion == EffectMotion.Blink)
