@@ -176,3 +176,35 @@ the per-letter offset. Those scale every layer at once.
 Effects live in a **library asset** that the editor keeps up to date and adds to the
 build's preloaded assets. If a tag works in the editor and not in a build, the library
 is the first thing to check.
+
+## Scripts with combining marks (Thai, and others)
+
+Thai writes a syllable as a consonant plus vowels and tone marks that sit above or below
+it with no width of their own. TextMeshPro lays each of those out as a separate
+character, so animating per character would give a vowel its own phase and its own
+random offset and let it drift off the consonant it belongs to — and the typewriter
+would show a bare consonant for a moment before its vowel caught up.
+
+TextBox Enhance groups them. A non-spacing mark animates with the letter it sits on,
+pivots on that letter, and is revealed at the same moment. The rule comes from Unicode
+rather than from Thai, so Devanagari matras, Arabic and Hebrew vowel points and Latin
+combining accents all behave the same way. Text without marks is unaffected — every
+character is its own letter.
+
+`TotalCharacters` and `OnCharacterRevealed` count letters as a reader would count them,
+not code points, so `"กิน"` is two rather than three.
+
+### You still need a font that has the glyphs
+
+The font TextMeshPro ships with covers Latin and nothing else, so Thai comes out as a
+row of empty boxes. Put a font that covers the script into the project, select it, and
+use **Assets > TextBox Enhance > Create TMP Font Asset**. It builds a dynamic font asset
+— glyphs are rendered as they are first used, so there are no character ranges to pick.
+
+Assign the result to your text, or set it as the default in **Project Settings >
+TextMesh Pro > Settings**. The effect editor has its own **Font** field and warns when
+the font cannot draw the sample text.
+
+No font is bundled with this package on purpose: fonts are licensed separately from
+code. Noto Sans Thai is a common choice and is licensed for redistribution; the Windows
+system fonts are not, so copying one into a project you ship is worth checking first.
