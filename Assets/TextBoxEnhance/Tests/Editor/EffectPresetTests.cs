@@ -110,7 +110,7 @@ namespace TextBoxEnhance.Tests
             // Aliases point at the same effect instance, so one preset covers both.
             var aliases = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
             {
-                "wiggle", "rotate",
+                "wiggle",
             };
 
             foreach (string tag in TextEffectRegistry.TagNames)

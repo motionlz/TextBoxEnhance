@@ -102,9 +102,11 @@ namespace TextBoxEnhance.Effects
     }
 
     /// <summary>
-    /// Rocks each character around its baseline. <c>&lt;swing a=12 f=4 w=0.5&gt;</c> - degrees.
+    /// Rocks each character around its baseline. <c>&lt;swing a=4 f=4 w=0.5&gt;</c> - degrees.
+    /// Not aliased to &lt;rotate&gt;: TextMeshPro has a tag of that name already, and
+    /// claiming it would stop the real one working.
     /// </summary>
-    [TextEffectTag("swing", "rotate")]
+    [TextEffectTag("swing")]
     public sealed class SwingEffect : TextEffect
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)

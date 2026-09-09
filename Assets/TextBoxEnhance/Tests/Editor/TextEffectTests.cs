@@ -119,7 +119,7 @@ namespace TextBoxEnhance.Tests
         {
             string[] tags =
             {
-                "wave", "shake", "wobble", "wiggle", "jitter", "bounce", "swing", "rotate",
+                "wave", "shake", "wobble", "wiggle", "jitter", "bounce", "swing",
                 "pulse", "rainbow", "tint", "fade", "blink",
             };
 
@@ -133,6 +133,28 @@ namespace TextBoxEnhance.Tests
             Assert.IsTrue(TextEffectRegistry.IsKnownTag("speed"));
             Assert.IsTrue(TextEffectRegistry.IsKnownTag("pause"));
             Assert.IsFalse(TextEffectRegistry.TryGet("speed", out _));
+        }
+
+        [Test]
+        public void OurTagsDoNotShadowTextMeshProsOwn()
+        {
+            // <rotate> was ours once, aliased to the swing effect. TextMeshPro has a tag
+            // of that name, and claiming it stopped the real one working -- silently,
+            // because our parser strips what it claims before TMP ever sees the text.
+            string[] textMeshProTags =
+            {
+                "b", "i", "u", "s", "br", "color", "size", "align", "noparse", "sprite",
+                "font", "material", "mark", "sup", "sub", "nobr", "cspace", "line-height",
+                "indent", "voffset", "width", "style", "gradient", "uppercase", "lowercase",
+                "smallcaps", "allcaps", "pos", "space", "page", "link", "rotate", "scale",
+                "alpha", "margin", "monospace", "strikethrough", "underline",
+            };
+
+            foreach (string tag in textMeshProTags)
+            {
+                Assert.IsFalse(TextEffectRegistry.IsKnownTag(tag),
+                    $"<{tag}> is a TextMeshPro tag; claiming it stops that one working");
+            }
         }
 
         [Test]

@@ -30,13 +30,13 @@ is one font size, so an effect looks the same on a 12pt and a 120pt label.
 
 | Tag | Attributes | What it does |
 | --- | --- | --- |
-| `<wave>` | `a` amplitude 0.15, `f` speed 6, `w` radians per character 0.6 | Sine wave travelling along the text |
-| `<shake>` | `a` amplitude 0.06, `f` steps per second 25 | Hard stepped rattle — shouting, damage numbers |
-| `<wobble>` | `a` amplitude 0.1, `f` speed 1.5 | Smooth Perlin drift — drunk, underwater |
-| `<jitter>` | `a` amplitude 0.05 | Re-rolled every frame; more frantic than shake |
-| `<bounce>` | `a` height 0.25, `f` speed 6, `w` 0.6 | Characters hop upward in sequence |
-| `<swing>` | `a` degrees 12, `f` speed 4, `w` 0.5 | Rocks around the baseline. Alias: `<rotate>` |
-| `<pulse>` | `a` amount 0.15, `f` speed 5, `w` 0.4 | Breathes in and out |
+| `<wave>` | `a` amplitude 0.05, `f` speed 6, `w` radians per character 0.6 | Sine wave travelling along the text |
+| `<shake>` | `a` amplitude 0.03, `f` steps per second 25 | Hard stepped rattle — shouting, damage numbers |
+| `<wobble>` | `a` amplitude 0.033, `f` speed 1.5 | Smooth Perlin drift — drunk, underwater |
+| `<jitter>` | `a` amplitude 0.03 | Re-rolled every frame; more frantic than shake |
+| `<bounce>` | `a` height 0.083, `f` speed 6, `w` 0.6 | Characters hop upward in sequence |
+| `<swing>` | `a` degrees 4, `f` speed 4, `w` 0.5 | Rocks around the baseline |
+| `<pulse>` | `a` amount 0.05, `f` speed 5, `w` 0.4 | Breathes in and out |
 
 `<wiggle>` is an alias for `<wobble>`.
 
