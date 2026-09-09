@@ -80,7 +80,7 @@ namespace TextBoxEnhance.EditorTools
             float centre = (min.floatValue + max.floatValue) * 0.5f;
             float reach = (max.floatValue - min.floatValue) * 0.5f;
 
-            reach = EditorGUILayout.Slider(AmountLabel(channel), reach, 0f, AmountLimit(channel));
+            reach = Mathf.Max(0f, SoftRangeSlider.Draw(AmountLabel(channel), reach, 0f, AmountSoftMax(channel)));
 
             if (advanced)
             {
@@ -109,9 +109,14 @@ namespace TextBoxEnhance.EditorTools
             }
         }
 
-        private static float AmountLimit(EffectChannel channel)
+        /// <summary>
+        /// Where the slider's track ends. Sized at roughly three times the largest
+        /// preset, so the values people actually use spread across the track instead of
+        /// bunching against the left edge. Typing past it still works.
+        /// </summary>
+        private static float AmountSoftMax(EffectChannel channel)
         {
-            return channel == EffectChannel.Rotation ? 180f : 1f;
+            return channel == EffectChannel.Rotation ? 45f : 0.4f;
         }
 
         private static void DrawColour(SerializedProperty layer, bool advanced)
@@ -152,15 +157,18 @@ namespace TextBoxEnhance.EditorTools
 
             if (motion != EffectMotion.Jitter)
             {
-                EditorGUILayout.PropertyField(layer.FindPropertyRelative("Speed"),
-                    new GUIContent(SpeedLabel(motion), "Times per second."));
+                SoftRangeSlider.Draw(layer.FindPropertyRelative("Speed"),
+                    new GUIContent(SpeedLabel(motion), "Times per second. Type a negative to run it backwards."),
+                    0f, 4f);
             }
 
             if (UsesSpread(motion))
             {
-                EditorGUILayout.PropertyField(layer.FindPropertyRelative("Spread"),
+                SoftRangeSlider.Draw(layer.FindPropertyRelative("Spread"),
                     new GUIContent("Offset per letter",
-                        "Delays each letter behind the one before it. This is what makes a wave travel."));
+                        "Delays each letter behind the one before it. This is what makes a wave travel. " +
+                        "Negative sends it the other way."),
+                    0f, 0.5f);
             }
 
             if (motion == EffectMotion.Blink)
