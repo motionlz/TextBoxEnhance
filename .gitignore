@@ -64,3 +64,7 @@ Thumbs.db
 
 # Screen recordings
 /Recordings/
+
+# Fonts are licensed separately from code; keep them out of the repo
+Assets/TextMesh Pro/Resources/Fonts & Materials/Sriracha-Regular SDF.asset
+Assets/TextMesh Pro/Resources/Fonts & Materials/Sriracha-Regular SDF.asset.meta
