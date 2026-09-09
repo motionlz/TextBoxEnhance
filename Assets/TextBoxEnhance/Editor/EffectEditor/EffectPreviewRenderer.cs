@@ -166,19 +166,23 @@ namespace TextBoxEnhance.EditorTools
         }
 
         /// <summary>
-        /// Fits the laid-out text in view with room to spare, so a character that swings
-        /// or scales out does not clip against the edge and read as a bug.
+        /// Shows the text at actual size: one point of the preview is one point of text,
+        /// so a 36pt sample is drawn 36 points tall.
         /// </summary>
+        /// <remarks>
+        /// This used to zoom to fit, which quietly rescaled every effect. A short sample
+        /// filled the preview whatever its point size, so a travel of a fraction of a
+        /// pixel was blown up until it looked right -- and then did almost nothing once
+        /// the same effect ran at the size text is actually read at. Whatever the preview
+        /// shows has to be the thing that ships, even when that means an effect looking
+        /// smaller in here than anyone would like.
+        /// </remarks>
         private void FrameCamera(Rect rect)
         {
             Bounds bounds = m_Text.bounds;
-            float aspect = rect.width / Mathf.Max(1f, rect.height);
 
-            const float headroom = 1.45f;
-            float halfHeight = Mathf.Max(bounds.extents.y, bounds.extents.x / Mathf.Max(0.01f, aspect));
-
-            m_Preview.camera.aspect = aspect;
-            m_Preview.camera.orthographicSize = Mathf.Max(0.5f, halfHeight * headroom);
+            m_Preview.camera.aspect = rect.width / Mathf.Max(1f, rect.height);
+            m_Preview.camera.orthographicSize = Mathf.Max(1f, rect.height * 0.5f);
             m_Preview.camera.transform.position = new Vector3(bounds.center.x, bounds.center.y, -10f);
         }
 
