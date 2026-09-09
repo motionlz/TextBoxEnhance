@@ -435,7 +435,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 951c2bf989edcd748b80469b7ada0740, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Text: Hello, <wave>world</wave>!
+  m_Text: "Hello, <wave>\u0E19\u0E35\u0E48\u0E04\u0E37\u0E2D\u0E2D\u0E31\u0E01\u0E29\u0E23\u0E44\u0E17\u0E22</wave>!"
   m_Target: {fileID: 357155638}
   m_Typewriter: 1
   m_CharactersPerSecond: 30
@@ -498,10 +498,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Hello, world!
+  m_text: "Hello, \u0E19\u0E35\u0E48\u0E04\u0E37\u0E2D\u0E2D\u0E31\u0E01\u0E29\u0E23\u0E44\u0E17\u0E22!"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4bd5f435a41e8494aafe04886c6f4a6d, type: 2}
+  m_sharedMaterial: {fileID: -9148816244447948099, guid: 4bd5f435a41e8494aafe04886c6f4a6d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -876,7 +876,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
