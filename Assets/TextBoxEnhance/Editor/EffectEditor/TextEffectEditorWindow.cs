@@ -383,17 +383,38 @@ namespace TextBoxEnhance.EditorTools
         {
             EditorUi.Section(heading);
 
+            var reproductions = new List<EffectPresets.Preset>();
+            var combinations = new List<EffectPresets.Preset>();
+
+            foreach (EffectPresets.Preset preset in EffectPresets.All)
+                (preset.ReproducesABuiltIn ? reproductions : combinations).Add(preset);
+
+            DrawPresetGrid(reproductions);
+
+            if (combinations.Count == 0)
+                return;
+
+            // Kept apart because they answer different questions. The first row is "give
+            // me what <wave> does"; the second is "show me what layers are for".
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Combinations, which no single tag can do",
+                EditorStyles.miniLabel);
+            DrawPresetGrid(combinations);
+        }
+
+        private void DrawPresetGrid(List<EffectPresets.Preset> presets)
+        {
             float width = EditorGUIUtility.currentViewWidth - 24f;
             int perRow = Mathf.Max(1, Mathf.FloorToInt(width / 84f));
             int index = 0;
 
-            while (index < EffectPresets.All.Count)
+            while (index < presets.Count)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    for (int column = 0; column < perRow && index < EffectPresets.All.Count; column++, index++)
+                    for (int column = 0; column < perRow && index < presets.Count; column++, index++)
                     {
-                        EffectPresets.Preset preset = EffectPresets.All[index];
+                        EffectPresets.Preset preset = presets[index];
                         if (GUILayout.Button(preset.Name, EditorStyles.miniButton))
                             ApplyPreset(preset);
                     }
