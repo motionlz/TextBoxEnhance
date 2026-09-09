@@ -231,3 +231,23 @@ is itself moving.
 Worth saying plainly: this is for a single word, a title or a damage number. In running
 text a tone mark that drifts off its consonant reads as broken rather than as style, and
 one that drifts towards the next consonant can be read as belonging to that one instead.
+
+### Why an effect can look different in the tool and in the game
+
+Offsets are measured in **em** — a fraction of the font size — so the same effect moves
+further on bigger text. A travel of 0.05 em is 1.8 points on 36pt text and 0.9 points on
+18pt text.
+
+The effect editor draws its sample at actual size and prints the travel in points
+underneath, so set **Text size** to whatever the game uses and the preview matches.
+
+Two things on the label itself will shrink the motion without the number in the effect
+changing:
+
+- **Auto Size** on the TMP component. The effective point size is whatever auto-sizing
+  settled on, which in a tight rect can be far below the size shown in the inspector.
+- A `<size>` tag inside the text, which changes the point size for the characters it
+  covers.
+
+Both are working as intended — the motion stays proportional to the letters — but they
+are the usual answer when an effect feels weaker in the game than it did in the tool.

@@ -204,6 +204,46 @@ namespace TextBoxEnhance.EditorTools
                 m_PreviewFont, typeof(TMP_FontAsset), false);
 
             DrawFontWarning();
+            DrawScaleNote();
+        }
+
+        /// <summary>
+        /// States the travel in points as well as em. Offsets are a fraction of the font
+        /// size, so the same effect moves further on bigger text -- which is the answer
+        /// to "it looked stronger in the tool than it does in the game" whenever the two
+        /// are set to different sizes.
+        /// </summary>
+        private void DrawScaleNote()
+        {
+            float travel = LargestTravelEm();
+
+            string note = travel > 0f
+                ? $"Actual size. Largest travel {travel:0.###} em, which is {travel * m_FontSize:0.##} pt " +
+                  "at this text size and scales with it."
+                : "Actual size: a point in here is a point in the game.";
+
+            EditorGUILayout.LabelField(note, EditorStyles.miniLabel);
+        }
+
+        /// <summary>How far the effect moves a character, in em, across its offset layers.</summary>
+        private float LargestTravelEm()
+        {
+            if (m_Asset == null)
+                return 0f;
+
+            float largest = 0f;
+            foreach (EffectLayer layer in m_Asset.Layers)
+            {
+                if (layer == null)
+                    continue;
+
+                if (layer.Channel != EffectChannel.OffsetX && layer.Channel != EffectChannel.OffsetY)
+                    continue;
+
+                largest = Mathf.Max(largest, Mathf.Abs(layer.Min), Mathf.Abs(layer.Max));
+            }
+
+            return largest;
         }
 
         private void DrawIdentity()
