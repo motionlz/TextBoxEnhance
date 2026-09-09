@@ -18,7 +18,7 @@ namespace TextBoxEnhance.EditorTools
         {
             // The asset database is not reliably queryable while the domain is still
             // loading, so ask on the next editor tick instead.
-            EditorApplication.delayCall += LoadLibrary;
+            EditorApplication.delayCall += () => LoadLibrary();
         }
 
         /// <summary>Finds the project's library and touches it so its OnEnable registers.</summary>
@@ -64,15 +64,21 @@ namespace TextBoxEnhance.EditorTools
         }
 
         [MenuItem("Tools/TextBox Enhance/Create Effect Library", priority = 140)]
-        private static void CreateLibrary()
+        private static void CreateLibraryMenu()
+        {
+            TextEffectLibrary library = FindOrCreateLibrary();
+            Selection.activeObject = library;
+            EditorGUIUtility.PingObject(library);
+        }
+
+        /// <summary>Returns the project's library, creating it the first time it is needed.</summary>
+        public static TextEffectLibrary FindOrCreateLibrary()
         {
             TextEffectLibrary existing = LoadLibrary();
             if (existing != null)
             {
                 EnsurePreloaded(existing);
-                Selection.activeObject = existing;
-                EditorGUIUtility.PingObject(existing);
-                return;
+                return existing;
             }
 
             const string folder = "Assets/TextBoxEnhance/Effects";
@@ -84,7 +90,7 @@ namespace TextBoxEnhance.EditorTools
             AssetDatabase.SaveAssets();
 
             EnsurePreloaded(library);
-            Selection.activeObject = library;
+            return library;
         }
     }
 }
