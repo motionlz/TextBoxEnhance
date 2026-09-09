@@ -79,7 +79,12 @@ namespace TextBoxEnhance
 
         private readonly ParsedText m_Parsed = new ParsedText();
         private TMP_MeshInfo[] m_CachedMeshInfo;
-        private float[] m_CharRevealStart;
+        private float[] m_ClusterRevealStart;
+        private int[] m_ClusterOf;
+        private int[] m_ClusterBase;
+        private int[] m_ClusterFirstChar;
+        private ClusterMap m_Clusters;
+        private int m_ClusterCount;
 
         private float m_Time;
         private float m_LastTimeSample;
@@ -118,8 +123,12 @@ namespace TextBoxEnhance
         /// <summary>Characters revealed so far.</summary>
         public int RevealedCharacters => m_RevealedCount;
 
-        /// <summary>Characters in the text once tags are stripped.</summary>
-        public int TotalCharacters => m_Target != null && m_Target.textInfo != null ? m_Target.textInfo.characterCount : 0;
+        /// <summary>
+        /// Letters in the text once tags are stripped. A Thai vowel or tone mark counts
+        /// with the consonant it sits on rather than on its own, so this is what a
+        /// reader would count and not always what <c>string.Length</c> would.
+        /// </summary>
+        public int TotalCharacters => m_ClusterCount;
 
         /// <summary>Characters revealed per second before <c>&lt;speed&gt;</c> tags are applied.</summary>
         public float CharactersPerSecond
@@ -269,17 +278,37 @@ namespace TextBoxEnhance
 
             m_CachedMeshInfo = TextMeshAnimator.Cache(m_Target);
 
-            int count = textInfo.characterCount;
-            if (m_CharRevealStart == null || m_CharRevealStart.Length < count)
+            m_ClusterCount = TextClusters.Build(textInfo, ref m_ClusterOf, ref m_ClusterBase);
+            m_Clusters = new ClusterMap(m_ClusterOf, m_ClusterBase, m_ClusterCount);
+            BuildClusterStarts(textInfo.characterCount);
+
+            if (m_ClusterRevealStart == null || m_ClusterRevealStart.Length < m_ClusterCount)
             {
-                var grown = new float[Mathf.Max(count, 16)];
+                var grown = new float[Mathf.Max(m_ClusterCount, 16)];
                 for (int i = 0; i < grown.Length; i++)
                     grown[i] = float.NaN;
 
-                if (m_CharRevealStart != null)
-                    Array.Copy(m_CharRevealStart, grown, m_CharRevealStart.Length);
+                if (m_ClusterRevealStart != null)
+                    Array.Copy(m_ClusterRevealStart, grown, m_ClusterRevealStart.Length);
 
-                m_CharRevealStart = grown;
+                m_ClusterRevealStart = grown;
+            }
+        }
+
+        /// <summary>
+        /// Records the first character of each cluster, so a cluster can look up the
+        /// speed and pause tags written against character positions.
+        /// </summary>
+        private void BuildClusterStarts(int characterCount)
+        {
+            if (m_ClusterFirstChar == null || m_ClusterFirstChar.Length < m_ClusterCount)
+                m_ClusterFirstChar = new int[Mathf.Max(m_ClusterCount, 16)];
+
+            for (int c = 0; c < characterCount; c++)
+            {
+                int cluster = m_ClusterOf[c];
+                if (m_ClusterBase[c] == c && cluster < m_ClusterFirstChar.Length)
+                    m_ClusterFirstChar[cluster] = c;
             }
         }
 
@@ -307,10 +336,10 @@ namespace TextBoxEnhance
             m_CompletedFired = false;
             m_LastRevealStart = float.NegativeInfinity;
 
-            if (m_CharRevealStart != null)
+            if (m_ClusterRevealStart != null)
             {
-                for (int i = 0; i < m_CharRevealStart.Length; i++)
-                    m_CharRevealStart[i] = float.NaN;
+                for (int i = 0; i < m_ClusterRevealStart.Length; i++)
+                    m_ClusterRevealStart[i] = float.NaN;
             }
 
             int total = TotalCharacters;
@@ -334,10 +363,10 @@ namespace TextBoxEnhance
 
         private void RevealCharacter(int index, float startTime)
         {
-            if (m_CharRevealStart == null || index < 0 || index >= m_CharRevealStart.Length)
+            if (m_ClusterRevealStart == null || index < 0 || index >= m_ClusterRevealStart.Length)
                 return;
 
-            m_CharRevealStart[index] = startTime;
+            m_ClusterRevealStart[index] = startTime;
             m_LastRevealStart = Mathf.Max(m_LastRevealStart, startTime);
         }
 
@@ -380,9 +409,10 @@ namespace TextBoxEnhance
         }
 
         /// <summary>Reveal speed at a character, folding in every <c>&lt;speed&gt;</c> range covering it.</summary>
-        private float SpeedMultiplierAt(int charIndex)
+        private float SpeedMultiplierAt(int cluster)
         {
             float multiplier = 1f;
+            int charIndex = FirstCharacterOf(cluster);
             List<SpeedRange> speeds = m_Parsed.Speeds;
 
             for (int i = 0; i < speeds.Count; i++)
@@ -393,6 +423,14 @@ namespace TextBoxEnhance
             }
 
             return multiplier;
+        }
+
+        /// <summary>The character a cluster starts at, for looking up character-indexed tags.</summary>
+        private int FirstCharacterOf(int cluster)
+        {
+            return m_ClusterFirstChar != null && cluster >= 0 && cluster < m_ClusterFirstChar.Length
+                ? m_ClusterFirstChar[cluster]
+                : cluster;
         }
 
         private float m_LastRevealStart = float.NegativeInfinity;
@@ -466,14 +504,16 @@ namespace TextBoxEnhance
         }
 
         /// <summary>Starts the hold requested by a <c>&lt;pause&gt;</c> sitting at this character.</summary>
-        private bool TryStartPauseAt(int charIndex)
+        private bool TryStartPauseAt(int cluster)
         {
             List<PauseMarker> pauses = m_Parsed.Pauses;
 
-            while (m_PauseCursor < pauses.Count && pauses[m_PauseCursor].CharIndex < charIndex)
+            while (m_PauseCursor < pauses.Count
+                   && m_Clusters.ClusterFor(pauses[m_PauseCursor].CharIndex) < cluster)
                 m_PauseCursor++;
 
-            if (m_PauseCursor >= pauses.Count || pauses[m_PauseCursor].CharIndex != charIndex)
+            if (m_PauseCursor >= pauses.Count
+                || m_Clusters.ClusterFor(pauses[m_PauseCursor].CharIndex) != cluster)
                 return false;
 
             m_PauseTimer = pauses[m_PauseCursor].Seconds;
@@ -484,10 +524,12 @@ namespace TextBoxEnhance
         /// <summary>How far a character is through its entrance, 0 while still hidden.</summary>
         public float RevealProgressOf(int charIndex)
         {
-            if (m_CharRevealStart == null || charIndex >= m_CharRevealStart.Length)
+            int cluster = m_Clusters.ClusterFor(charIndex);
+
+            if (m_ClusterRevealStart == null || cluster < 0 || cluster >= m_ClusterRevealStart.Length)
                 return 1f;
 
-            float start = m_CharRevealStart[charIndex];
+            float start = m_ClusterRevealStart[cluster];
             if (float.IsNaN(start))
                 return 0f;
 
@@ -503,11 +545,11 @@ namespace TextBoxEnhance
             if (textInfo == null || m_CachedMeshInfo == null)
                 return;
 
-            int charCount = textInfo.characterCount;
+            int letterCount = m_ClusterCount;
             bool entranceRunning = m_RevealDuration > 0f && m_Time < m_LastRevealStart + m_RevealDuration;
-            bool animating = charCount > 0
+            bool animating = letterCount > 0
                              && (m_Parsed.Effects.Count > 0 || m_IsRevealing || entranceRunning
-                                 || m_RevealedCount < charCount);
+                                 || m_RevealedCount < letterCount);
 
             // One extra pass after the last animating frame settles the final values.
             if (!animating && !m_GeometryDirty && !m_WasAnimating)
@@ -519,7 +561,7 @@ namespace TextBoxEnhance
             var reveal = new RevealSettings(m_RevealStyle, m_RevealEase, m_RevealDistance, m_RevealSpins);
 
             if (!TextMeshAnimator.Apply(m_Target, m_CachedMeshInfo, m_Parsed.Effects,
-                    m_Time, deltaTime, this, reveal))
+                    m_Time, deltaTime, this, reveal, m_Clusters))
             {
                 // TextMeshPro re-laid the text out behind us; take a fresh copy and
                 // pick it up next frame.
