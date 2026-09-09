@@ -40,6 +40,21 @@ namespace TextBoxEnhance.EditorTools
 
                 EditorGUILayout.PropertyField(motion, new GUIContent("How"));
 
+                SerializedProperty target = layer.FindPropertyRelative("Target");
+                EditorGUILayout.PropertyField(target, new GUIContent("Applies to",
+                    "Which part of a letter moves. Only does anything in scripts that write " +
+                    "marks above or below a base, such as Thai."));
+
+                if ((LayerTarget)target.enumValueIndex != LayerTarget.WholeLetter)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Splitting a letter is for a single word, a title or a damage number. " +
+                        "In running text a tone mark that drifts off its consonant reads as " +
+                        "broken rather than as style, and one that drifts towards the next " +
+                        "consonant can be read as belonging to that one.",
+                        MessageType.Info);
+                }
+
                 var channelValue = (EffectChannel)channel.enumValueIndex;
                 var motionValue = (EffectMotion)motion.enumValueIndex;
 
@@ -51,7 +66,7 @@ namespace TextBoxEnhance.EditorTools
                 DrawTiming(layer, motionValue, advanced);
 
                 if (advanced)
-                    EditorGUILayout.PropertyField(layer.FindPropertyRelative("Timebase"), new GUIContent("Driven by"));
+    EditorGUILayout.PropertyField(layer.FindPropertyRelative("Timebase"), new GUIContent("Driven by"));
             }
 
             return remove;

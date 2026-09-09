@@ -208,3 +208,26 @@ the font cannot draw the sample text.
 No font is bundled with this package on purpose: fonts are licensed separately from
 code. Noto Sans Thai is a common choice and is licensed for redistribution; the Windows
 system fonts are not, so copying one into a project you ship is worth checking first.
+
+### Animating the marks on their own
+
+Each layer has an **Applies to** dropdown, and built-in tags take the same choice as a
+bare flag:
+
+| Applies to | Tag | What moves |
+| --- | --- | --- |
+| Whole letter | `<shake>` | The base and its marks together. The default. |
+| Base letter only | `<shake base>` | The word slides out from under its marks. |
+| Marks only | `<shake marks>` | Tone marks rattle over a word that holds still. |
+
+With **Marks only** each mark gets a phase and a random offset of its own, so two marks
+stacked on one consonant come apart rather than moving as a block.
+
+Marks still pivot on the letter they belong to, so a rotation swings a mark in an arc
+around its consonant rather than spinning it in place. Stack two layers to combine —
+one on the whole letter, one on the marks — and the marks move relative to a word that
+is itself moving.
+
+Worth saying plainly: this is for a single word, a title or a damage number. In running
+text a tone mark that drifts off its consonant reads as broken rather than as style, and
+one that drifts towards the next consonant can be read as belonging to that one instead.
