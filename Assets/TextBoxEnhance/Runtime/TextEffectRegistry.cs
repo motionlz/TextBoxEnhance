@@ -12,6 +12,7 @@ namespace TextBoxEnhance
     public static class TextEffectRegistry
     {
         private static Dictionary<string, TextEffect> s_Effects;
+        private static HashSet<string> s_BuiltInTags;
 
         /// <summary>Tag names that drive the typewriter rather than the character mesh.</summary>
         internal static readonly HashSet<string> ControlTags =
@@ -62,9 +63,30 @@ namespace TextBoxEnhance
             Effects[tag] = effect;
         }
 
+        /// <summary>True if a tag is claimed by a code effect carrying the attribute.</summary>
+        public static bool IsBuiltIn(string tag)
+        {
+            if (s_Effects == null)
+                Rebuild();
+
+            return !string.IsNullOrEmpty(tag) && s_BuiltInTags.Contains(tag);
+        }
+
+        /// <summary>
+        /// Throws away every registration, including ones added by
+        /// <see cref="Register"/>. The next lookup rediscovers the code effects.
+        /// Asset-backed effects have to be put back by whoever owns them.
+        /// </summary>
+        public static void Reset()
+        {
+            s_Effects = null;
+            s_BuiltInTags = null;
+        }
+
         private static void Rebuild()
         {
             s_Effects = new Dictionary<string, TextEffect>(StringComparer.OrdinalIgnoreCase);
+            s_BuiltInTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
@@ -117,6 +139,7 @@ namespace TextBoxEnhance
                         }
 
                         s_Effects.Add(tag, instance);
+                        s_BuiltInTags.Add(tag);
                     }
                 }
             }
