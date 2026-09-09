@@ -14,6 +14,15 @@ namespace TextBoxEnhance
         private static Dictionary<string, TextEffect> s_Effects;
         private static HashSet<string> s_BuiltInTags;
 
+        /// <summary>
+        /// Bumped whenever the set of tags changes. Text parsed before a tag existed
+        /// kept that tag as literal text -- so an effect asset registering after a text
+        /// box had already read its string left the raw markup on screen until someone
+        /// touched the component. Anything holding parsed text watches this and re-reads
+        /// when it moves.
+        /// </summary>
+        public static int Version { get; private set; }
+
         /// <summary>Tag names that drive the typewriter rather than the character mesh.</summary>
         internal static readonly HashSet<string> ControlTags =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "speed", "pause" };
@@ -61,6 +70,7 @@ namespace TextBoxEnhance
                 throw new ArgumentException("A text effect needs a non-empty tag and a non-null effect.");
 
             Effects[tag] = effect;
+            Version++;
         }
 
         /// <summary>True if a tag is claimed by a code effect carrying the attribute.</summary>
@@ -81,6 +91,7 @@ namespace TextBoxEnhance
         {
             s_Effects = null;
             s_BuiltInTags = null;
+            Version++;
         }
 
         private static void Rebuild()

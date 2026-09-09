@@ -170,6 +170,32 @@ namespace TextBoxEnhance.Tests
         }
 
         [Test]
+        public void RegisteringAnEffectMovesTheRegistryVersion()
+        {
+            // What a text box watches to know its parsed text has gone stale. Without it
+            // a tag that did not exist when the text was read stays on screen as markup.
+            TextEffectAsset asset = MakeAsset("sparkle");
+
+            int before = TextEffectRegistry.Version;
+
+            m_Library = ScriptableObject.CreateInstance<TextEffectLibrary>();
+            m_Library.Effects.Add(asset);
+            m_Library.Reregister();
+
+            Assert.AreNotEqual(before, TextEffectRegistry.Version,
+                "nothing would know the tag list had changed");
+        }
+
+        [Test]
+        public void ResetMovesTheRegistryVersionToo()
+        {
+            int before = TextEffectRegistry.Version;
+            TextEffectRegistry.Reset();
+
+            Assert.AreNotEqual(before, TextEffectRegistry.Version);
+        }
+
+        [Test]
         public void BuiltInTagsAreReportedAsBuiltIn()
         {
             Assert.IsTrue(TextEffectRegistry.IsBuiltIn("wave"));
