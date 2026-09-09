@@ -91,6 +91,41 @@ namespace TextBoxEnhance.Tests
         }
 
         [Test]
+        public void FlippingIsReachableFromTheScaleSlider()
+        {
+            // The bug this catches: with the amount track capped below 1, a scale layer
+            // could never reach zero, so Allow flipping sat there switched on and doing
+            // nothing at all. A toggle that cannot fire is worse than no toggle.
+            float lowest = EffectLimits.Neutral(EffectChannel.Scale)
+                           - EffectLimits.Amount(EffectChannel.Scale, EffectMotion.Sine);
+
+            Assert.Less(lowest, 0f, "the scale can never cross zero, so flipping cannot happen");
+        }
+
+        [Test]
+        public void AnAddedLayerIsGentlerThanEveryPreset()
+        {
+            // A layer lands next to whatever is already there. Arriving at full preset
+            // strength swamps the effect being built instead of adding to it.
+            EffectLayer added = EffectPresets.NewLayer();
+            float addedReach = (added.Max - added.Min) * 0.5f;
+
+            Assert.Greater(addedReach, 0f, "an added layer that does nothing looks broken too");
+
+            foreach (EffectPresets.Preset preset in EffectPresets.All)
+            {
+                foreach (EffectLayer layer in preset.Build())
+                {
+                    if (layer.Channel != EffectChannel.OffsetX && layer.Channel != EffectChannel.OffsetY)
+                        continue;
+
+                    Assert.LessOrEqual(addedReach, (layer.Max - layer.Min) * 0.5f,
+                        $"an added layer hits harder than the {preset.Name} preset");
+                }
+            }
+        }
+
+        [Test]
         public void ThePulsePresetNeverMirrorsAcrossAWholeCycle()
         {
             EffectLayer layer = EffectPresets.Pulse()[0];

@@ -36,6 +36,12 @@ namespace TextBoxEnhance.EditorTools
             if (channel == EffectChannel.Alpha || channel == EffectChannel.Colour)
                 return 1f;
 
+            // Scale is measured around 1, and its track has to reach past that or the
+            // scale can never cross zero -- which would leave Allow flipping switched on
+            // and doing nothing, because the value it guards is unreachable.
+            if (IsScale(channel))
+                return 1.5f;
+
             if (channel == EffectChannel.Rotation)
                 return IsInstant(motion) ? 30f : 180f;
 

@@ -87,8 +87,10 @@ namespace TextBoxEnhance.EditorTools
 
             // Rescues a scale layer saved before the resting value followed the channel.
             // A scale of zero renders nothing at all, which looks like a broken effect
-            // rather than a setting that wants changing.
-            if (EffectLimits.IsScale(channel) && centre <= 0f)
+            // rather than a setting that wants changing. Left alone once flipping is on:
+            // resting at or below zero is a deliberate choice at that point.
+            if (EffectLimits.IsScale(channel) && centre <= 0f
+                && !layer.FindPropertyRelative("AllowFlip").boolValue)
                 centre = 1f;
 
             reach = CurvedSlider.Draw(AmountLabel(channel), reach, 0f, EffectLimits.Amount(channel, motion));
