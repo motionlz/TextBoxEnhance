@@ -92,7 +92,7 @@ namespace TextBoxEnhance.Data
 
         public static List<EffectLayer> Shake()
         {
-            return Pair(EffectMotion.Shake, -0.02f, 0.02f, speed: 25f, spread: 0f, saltX: 0, saltY: 1);
+            return Pair(EffectMotion.Shake, -0.03f, 0.03f, speed: 25f, spread: 0f, saltX: 0, saltY: 1);
         }
 
         public static List<EffectLayer> Wobble()
@@ -102,7 +102,7 @@ namespace TextBoxEnhance.Data
 
         public static List<EffectLayer> Jitter()
         {
-            return Pair(EffectMotion.Jitter, -0.017f, 0.017f, speed: 1f, spread: 0f, saltX: 2, saltY: 3);
+            return Pair(EffectMotion.Jitter, -0.03f, 0.03f, speed: 1f, spread: 0f, saltX: 2, saltY: 3);
         }
 
         public static List<EffectLayer> Bounce()

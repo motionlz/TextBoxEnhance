@@ -39,7 +39,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetPrimaryFloat(0.02f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.03f, "a", "amp", "amplitude");
             float frequency = parameters.GetFloat(25f, "f", "freq", "frequency");
 
             // Quantising time is what makes this read as a rattle rather than a drift.
@@ -76,7 +76,7 @@ namespace TextBoxEnhance.Effects
     {
         public override void Apply(in TextEffectContext context, TagParams parameters, ref CharacterMod mod)
         {
-            float amplitude = parameters.GetPrimaryFloat(0.017f, "a", "amp", "amplitude");
+            float amplitude = parameters.GetPrimaryFloat(0.03f, "a", "amp", "amplitude");
 
             int step = Time.frameCount;
             mod.Offset.x += (EffectMath.Random01(context.CharIndex, step, 2) - 0.5f) * 2f * amplitude;
