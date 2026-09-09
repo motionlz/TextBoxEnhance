@@ -1,0 +1,23 @@
+{
+  "name": "com.motionlz.textboxenhance",
+  "version": "1.0.0",
+  "displayName": "TextBox Enhance",
+  "description": "Per-character text animation for TextMeshPro, driven by rich-text tags. Write <wave>sea</wave> and the word moves. Includes a typewriter with per-character entrances, a visual effect editor with a live preview, and correct handling of scripts that write marks above and below a base, such as Thai.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.ugui": "2.0.0"
+  },
+  "keywords": [
+    "text",
+    "textmeshpro",
+    "animation",
+    "dialogue",
+    "typewriter",
+    "thai"
+  ],
+  "author": {
+    "name": "Wichayuth Luaengtawekul",
+    "url": "https://github.com/motionlz"
+  },
+  "license": "MIT"
+}

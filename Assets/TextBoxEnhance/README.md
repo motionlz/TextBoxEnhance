@@ -6,6 +6,23 @@ Write `The <wave>sea</wave> was <shake>calm</shake>` into an `AnimatedTextBox` a
 the words animate — no timeline, no per-character GameObjects, no separate label
 for each effect.
 
+## Installing
+
+**Window > Package Manager > + > Install package from git URL**, and paste:
+
+```
+https://github.com/motionlz/TextBoxEnhance.git?path=/Assets/TextBoxEnhance
+```
+
+The `?path=` is there because this repository is the development project; the package
+itself is the folder that path points at.
+
+Needs Unity 6000.0 or newer and `com.unity.ugui`, which ships with Unity. If the project
+has never used TextMeshPro before, run **Tools > TextBox Enhance > Import TextMeshPro
+Resources** once -- without it every TMP label renders blank.
+
+To pin a version, append a tag: `...?path=/Assets/TextBoxEnhance#v1.0.0`.
+
 ## Quick start
 
 1. **GameObject > UI > Animated Text Box.** This creates a canvas if the scene has
