@@ -3,6 +3,7 @@
     "rootNamespace": "TextBoxEnhance.Tests",
     "references": [
         "TextBoxEnhance.Runtime",
+        "TextBoxEnhance.Editor",
         "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
