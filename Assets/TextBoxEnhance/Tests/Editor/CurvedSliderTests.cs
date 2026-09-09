@@ -110,24 +110,47 @@ namespace TextBoxEnhance.Tests
         }
 
         [Test]
-        public void EveryPresetSpeedFitsInsideItsTrack()
+        public void EveryPresetFitsInsideItsOwnTrack()
         {
-            // A limit that clipped a preset would quietly change what the presets do.
+            // A limit that clipped a preset would quietly change what that preset does,
+            // and the clipping would only show up as an effect that looks wrong.
             foreach (Data.EffectPresets.Preset preset in Data.EffectPresets.All)
             {
                 foreach (Data.EffectLayer layer in preset.Build())
                 {
-                    float limit = layer.Motion == Data.EffectMotion.Shake
-                                  || layer.Motion == Data.EffectMotion.Jitter ? 60f : 8f;
+                    Assert.LessOrEqual(Mathf.Abs(layer.Speed), EffectLimits.Speed(layer.Motion),
+                        $"{preset.Name} speed {layer.Speed} does not fit its track");
 
-                    Assert.LessOrEqual(Mathf.Abs(layer.Speed), limit,
-                        $"{preset.Name} speed {layer.Speed} does not fit a track of {limit}");
-                    Assert.LessOrEqual(Mathf.Abs(layer.Spread), 1f, $"{preset.Name} spread does not fit");
+                    Assert.LessOrEqual(Mathf.Abs(layer.Spread), EffectLimits.Spread,
+                        $"{preset.Name} offset per letter does not fit its track");
+
                     Assert.LessOrEqual((layer.Max - layer.Min) * 0.5f,
-                        layer.Channel == Data.EffectChannel.Rotation ? 180f : 1f,
-                        $"{preset.Name} amount does not fit");
+                        EffectLimits.Amount(layer.Channel, layer.Motion),
+                        $"{preset.Name} amount does not fit its track");
                 }
             }
+        }
+
+        [Test]
+        public void InstantMotionsGetAShorterAmountTrack()
+        {
+            // A fifth of an em travelled smoothly is a wave; the same distance jumped
+            // twice a second is text nobody can read, so the track has to be shorter.
+            float smooth = EffectLimits.Amount(Data.EffectChannel.OffsetY, Data.EffectMotion.Sine);
+            float instant = EffectLimits.Amount(Data.EffectChannel.OffsetY, Data.EffectMotion.Blink);
+
+            Assert.Less(instant, smooth);
+        }
+
+        [Test]
+        public void SmallOffsetsForInstantMotionsSpreadAcrossTheTrack()
+        {
+            // The readable range for a jumping offset is roughly 0 to 0.03, and it needs
+            // enough of the track to be dialled rather than guessed at.
+            float limit = EffectLimits.Amount(Data.EffectChannel.OffsetX, Data.EffectMotion.Blink);
+
+            Assert.Greater(CurvedSlider.ToPosition(0.03f, 0f, limit, Response), 0.4f,
+                "the readable range is still crammed against the left edge");
         }
     }
 }

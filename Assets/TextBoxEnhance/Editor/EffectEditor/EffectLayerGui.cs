@@ -33,7 +33,11 @@ namespace TextBoxEnhance.EditorTools
                         remove = true;
                 }
 
+                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(channel, new GUIContent("Moves"));
+                if (EditorGUI.EndChangeCheck())
+                    Recentre(layer, (EffectChannel)channel.enumValueIndex);
+
                 EditorGUILayout.PropertyField(motion, new GUIContent("How"));
 
                 var channelValue = (EffectChannel)channel.enumValueIndex;
@@ -42,7 +46,7 @@ namespace TextBoxEnhance.EditorTools
                 if (channelValue == EffectChannel.Colour)
                     DrawColour(layer, advanced);
                 else
-                    DrawRange(layer, channelValue, advanced);
+                    DrawRange(layer, channelValue, motionValue, advanced);
 
                 DrawTiming(layer, motionValue, advanced);
 
@@ -65,7 +69,8 @@ namespace TextBoxEnhance.EditorTools
         /// Presents Min/Max as a single "amount" for the channels people think of
         /// symmetrically, keeping the resting position out of the way in Advanced.
         /// </summary>
-        private static void DrawRange(SerializedProperty layer, EffectChannel channel, bool advanced)
+        private static void DrawRange(SerializedProperty layer, EffectChannel channel,
+            EffectMotion motion, bool advanced)
         {
             SerializedProperty min = layer.FindPropertyRelative("Min");
             SerializedProperty max = layer.FindPropertyRelative("Max");
@@ -80,7 +85,20 @@ namespace TextBoxEnhance.EditorTools
             float centre = (min.floatValue + max.floatValue) * 0.5f;
             float reach = (max.floatValue - min.floatValue) * 0.5f;
 
-            reach = CurvedSlider.Draw(AmountLabel(channel), reach, 0f, AmountLimit(channel));
+            // Rescues a scale layer saved before the resting value followed the channel.
+            // A scale of zero renders nothing at all, which looks like a broken effect
+            // rather than a setting that wants changing.
+            if (EffectLimits.IsScale(channel) && centre <= 0f)
+                centre = 1f;
+
+            reach = CurvedSlider.Draw(AmountLabel(channel), reach, 0f, EffectLimits.Amount(channel, motion));
+
+            if (EffectLimits.IsScale(channel))
+            {
+                EditorGUILayout.PropertyField(layer.FindPropertyRelative("AllowFlip"),
+                    new GUIContent("Allow flipping",
+                        "Lets the character turn inside out when the scale passes zero."));
+            }
 
             if (advanced)
             {
@@ -90,6 +108,30 @@ namespace TextBoxEnhance.EditorTools
 
             min.floatValue = centre - reach;
             max.floatValue = centre + reach;
+        }
+
+        /// <summary>
+        /// Moves the layer's range onto the new channel's neutral, keeping how far it
+        /// travels. Without this, switching an offset layer to scale leaves it resting
+        /// at zero -- and a character scaled to zero is a character you cannot see.
+        /// </summary>
+        private static void Recentre(SerializedProperty layer, EffectChannel channel)
+        {
+            SerializedProperty min = layer.FindPropertyRelative("Min");
+            SerializedProperty max = layer.FindPropertyRelative("Max");
+
+            if (channel == EffectChannel.Alpha || channel == EffectChannel.Colour)
+            {
+                min.floatValue = 0f;
+                max.floatValue = 1f;
+                return;
+            }
+
+            float reach = Mathf.Abs(max.floatValue - min.floatValue) * 0.5f;
+            float neutral = EffectLimits.Neutral(channel);
+
+            min.floatValue = neutral - reach;
+            max.floatValue = neutral + reach;
         }
 
         private static GUIContent AmountLabel(EffectChannel channel)
@@ -107,26 +149,6 @@ namespace TextBoxEnhance.EditorTools
                 default:
                     return new GUIContent("Distance", "How far it travels, as a fraction of the font size.");
             }
-        }
-
-        /// <summary>
-        /// Where the slider's track ends. Wide enough that nothing sensible is out of
-        /// reach -- a full font size of travel, or half a turn -- and the curve is what
-        /// keeps the small end usable rather than a short track.
-        /// </summary>
-        private static float AmountLimit(EffectChannel channel)
-        {
-            return channel == EffectChannel.Rotation ? 180f : 1f;
-        }
-
-        /// <summary>
-        /// Speed means different things to different motions: a rattle counts re-rolls
-        /// per second and runs at 25, while a wave counts cycles and runs near 1. One
-        /// track for both would leave the wave pinned to the left edge.
-        /// </summary>
-        private static float SpeedLimit(EffectMotion motion)
-        {
-            return motion == EffectMotion.Shake || motion == EffectMotion.Jitter ? 60f : 8f;
         }
 
         private static void DrawColour(SerializedProperty layer, bool advanced)
@@ -169,7 +191,7 @@ namespace TextBoxEnhance.EditorTools
             {
                 CurvedSlider.Draw(layer.FindPropertyRelative("Speed"),
                     new GUIContent(SpeedLabel(motion), "Times per second."),
-                    0f, SpeedLimit(motion));
+                    0f, EffectLimits.Speed(motion));
             }
 
             if (UsesSpread(motion))
@@ -182,7 +204,7 @@ namespace TextBoxEnhance.EditorTools
                     new GUIContent("Offset per letter",
                         "Delays each letter behind the one before it. This is what makes a wave travel. " +
                         "Negative sends it the other way."),
-                    -1f, 1f);
+                    -EffectLimits.Spread, EffectLimits.Spread);
             }
 
             if (motion == EffectMotion.Blink)
