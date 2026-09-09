@@ -147,9 +147,10 @@ namespace TextBoxEnhance.Tests
             // The component restores TMP's own geometry every frame. If it did not, each
             // frame's offset would be applied to the previous frame's result and the
             // character would wander off instead of swinging around its layout position.
-            const float amplitudeEm = 0.15f;
+            // Read from the preset rather than written out, so retuning the wave does not
+            // leave this asserting a displacement nothing produces any more.
             const float fontSize = 36f;
-            float peakToPeak = 2f * amplitudeEm * fontSize;
+            float peakToPeak = 2f * Data.EffectPresets.Wave()[0].Max * fontSize;
 
             m_Box.CharactersPerSecond = 0f;
             m_Box.Text = "<wave>AAAA</wave>";
