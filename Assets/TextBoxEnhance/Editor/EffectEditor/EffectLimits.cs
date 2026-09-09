@@ -42,8 +42,10 @@ namespace TextBoxEnhance.EditorTools
             if (IsScale(channel))
                 return 1.5f;
 
+            // Half a turn was never wanted for text and left a four degree swing pinned
+            // against the left edge; a quarter turn is more than any legible effect needs.
             if (channel == EffectChannel.Rotation)
-                return IsInstant(motion) ? 30f : 180f;
+                return IsInstant(motion) ? 30f : 90f;
 
             return IsInstant(motion) ? 0.15f : 0.6f;
         }

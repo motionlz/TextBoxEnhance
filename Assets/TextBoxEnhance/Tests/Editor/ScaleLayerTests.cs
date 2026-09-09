@@ -112,17 +112,11 @@ namespace TextBoxEnhance.Tests
 
             Assert.Greater(addedReach, 0f, "an added layer that does nothing looks broken too");
 
-            foreach (EffectPresets.Preset preset in EffectPresets.All)
-            {
-                foreach (EffectLayer layer in preset.Build())
-                {
-                    if (layer.Channel != EffectChannel.OffsetX && layer.Channel != EffectChannel.OffsetY)
-                        continue;
-
-                    Assert.LessOrEqual(addedReach, (layer.Max - layer.Min) * 0.5f,
-                        $"an added layer hits harder than the {preset.Name} preset");
-                }
-            }
+            // Measured against the wave, which is the ordinary case. Shake and jitter are
+            // deliberately tiny, and being quieter than those would mean being invisible.
+            EffectLayer wave = EffectPresets.Wave()[0];
+            Assert.LessOrEqual(addedReach, (wave.Max - wave.Min) * 0.5f,
+                "an added layer hits harder than the wave preset");
         }
 
         [Test]

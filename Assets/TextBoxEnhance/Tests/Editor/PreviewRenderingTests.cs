@@ -108,8 +108,11 @@ namespace TextBoxEnhance.Tests
                     FullyRevealed.Instance, RevealSettings.None));
                 float lifted = VertexY(0);
 
-                // 0.15 em at 36pt is 5.4 units, and the preset peaks at exactly that.
-                Assert.AreEqual(5.4f, lifted - resting, 0.2f,
+                // Offsets are in em, so the peak is the layer's amount times the point
+                // size. Derived rather than written out, so retuning a preset does not
+                // leave this test asserting a number nothing produces any more.
+                float expected = asset.Layers[0].Max * 36f;
+                Assert.AreEqual(expected, lifted - resting, expected * 0.05f,
                     "the preview did not move the text by the amount the effect asks for");
             }
             finally
