@@ -78,6 +78,10 @@ namespace TextBoxEnhance.EditorTools
             return serializedObject.FindProperty(name);
         }
 
+        /// <summary>
+        /// No heading over these two: they sit at the top of the component, where a
+        /// heading saying "Text" above a field labelled "Text" is a word wasted.
+        /// </summary>
         private void DrawText()
         {
             EditorGUILayout.PropertyField(Find("m_Text"));

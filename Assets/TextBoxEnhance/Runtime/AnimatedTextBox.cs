@@ -25,7 +25,6 @@ namespace TextBoxEnhance
         [Serializable]
         public sealed class CharacterRevealedEvent : UnityEvent<int> { }
 
-        [Header("Text")]
         [SerializeField, TextArea(3, 10)]
         [Tooltip("Source text. Supports TextMeshPro rich text plus this package's effect tags.")]
         private string m_Text = "Hello, <wave>world</wave>!";
@@ -34,7 +33,6 @@ namespace TextBoxEnhance
         [Tooltip("Label to drive. Defaults to a TMP_Text on this GameObject.")]
         private TMP_Text m_Target;
 
-        [Header("Typewriter")]
         [SerializeField]
         [Tooltip("Reveal the text one character at a time instead of showing it all at once.")]
         private bool m_Typewriter = true;
@@ -47,7 +45,6 @@ namespace TextBoxEnhance
         [Tooltip("Start revealing as soon as the component is enabled.")]
         private bool m_PlayOnEnable = true;
 
-        [Header("Character entrance")]
         [SerializeField]
         private RevealStyle m_RevealStyle = RevealStyle.Fade;
 
@@ -67,12 +64,10 @@ namespace TextBoxEnhance
         [Tooltip("Full turns for the Spin entrance.")]
         private float m_RevealSpins = 1f;
 
-        [Header("Timing")]
         [SerializeField]
         [Tooltip("Ignore Time.timeScale, so text keeps moving while the game is paused.")]
         private bool m_UseUnscaledTime = true;
 
-        [Header("Events")]
         public UnityEvent OnRevealStarted = new UnityEvent();
         public CharacterRevealedEvent OnCharacterRevealed = new CharacterRevealedEvent();
         public UnityEvent OnRevealCompleted = new UnityEvent();
@@ -96,6 +91,7 @@ namespace TextBoxEnhance
         private bool m_CompletedFired;
         private bool m_TextDirty = true;
         private bool m_RestartPending;
+        private int m_RegistryVersion = -1;
         private bool m_GeometryDirty = true;
         private bool m_Subscribed;
 
@@ -446,6 +442,16 @@ namespace TextBoxEnhance
             float deltaTime = Mathf.Clamp(now - m_LastTimeSample, 0f, 0.25f);
             m_LastTimeSample = now;
             m_Time += deltaTime;
+
+            // An effect asset can register after this box has already parsed its text --
+            // every domain reload does exactly that -- and a tag that did not exist at
+            // parse time was left in the string as literal markup. Re-read when the set
+            // of tags changes, without restarting a reveal that may be part way through.
+            if (m_RegistryVersion != TextEffectRegistry.Version)
+            {
+                m_RegistryVersion = TextEffectRegistry.Version;
+                m_TextDirty = true;
+            }
 
             EnsureBuilt();
 
