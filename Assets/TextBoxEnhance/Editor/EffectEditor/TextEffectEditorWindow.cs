@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using TextBoxEnhance.Data;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,6 +21,7 @@ namespace TextBoxEnhance.EditorTools
         [SerializeField] private TextEffectAsset m_Asset;
         [SerializeField] private string m_Sample = "Animate this text";
         [SerializeField] private float m_FontSize = 36f;
+        [SerializeField] private TMP_FontAsset m_PreviewFont;
         [SerializeField] private bool m_Playing = true;
         [SerializeField] private bool m_Advanced;
         [SerializeField] private float m_Time;
@@ -158,8 +161,26 @@ namespace TextBoxEnhance.EditorTools
                 ? new Color(0.13f, 0.14f, 0.17f)
                 : new Color(0.22f, 0.23f, 0.27f);
 
+            m_Renderer.SetFont(m_PreviewFont);
             m_Renderer.SetSample(m_Sample, m_FontSize);
             m_Renderer.Draw(rect, m_Asset, m_Time, background);
+        }
+
+        /// <summary>
+        /// Warns when the font cannot draw the sample. Without this the preview shows a
+        /// row of empty boxes, which reads as the effect being broken rather than the
+        /// font being wrong -- the usual first experience of typing Thai in here.
+        /// </summary>
+        private void DrawFontWarning()
+        {
+            if (!ThaiFontSetup.TryFindMissingCharacters(m_Renderer.Font, m_Sample, out List<char> missing))
+                return;
+
+            EditorGUILayout.HelpBox(
+                $"This font has no glyph for {string.Join(" ", missing.GetRange(0, Mathf.Min(8, missing.Count)))}. " +
+                "Pick a font that covers the script, or make one with " +
+                "Assets > TextBox Enhance > Create TMP Font Asset.",
+                MessageType.Warning);
         }
 
         private void DrawPreviewControls()
@@ -178,6 +199,11 @@ namespace TextBoxEnhance.EditorTools
 
             m_Sample = EditorGUILayout.TextField("Sample text", m_Sample);
             m_FontSize = EditorGUILayout.Slider("Text size", m_FontSize, 8f, 96f);
+            m_PreviewFont = (TMP_FontAsset)EditorGUILayout.ObjectField(
+                new GUIContent("Font", "Leave empty to use the project's default TextMeshPro font."),
+                m_PreviewFont, typeof(TMP_FontAsset), false);
+
+            DrawFontWarning();
         }
 
         private void DrawIdentity()

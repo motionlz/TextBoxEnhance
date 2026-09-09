@@ -27,11 +27,19 @@ namespace TextBoxEnhance.EditorTools
         private readonly ParsedText m_Parsed = new ParsedText();
         private readonly List<EffectRange> m_Ranges = new List<EffectRange>();
 
+        private int[] m_ClusterOf;
+        private int[] m_ClusterBase;
+        private ClusterMap m_Clusters;
+
         private string m_BuiltText;
         private float m_BuiltSize;
         private bool m_LayoutDirty = true;
 
         public bool IsReady => m_Text != null;
+
+        /// <summary>The font asset the preview is drawing with, or null before its first draw.</summary>
+        public TMP_FontAsset Font => m_Text != null ? m_Text.font : null;
+
 
         private void EnsureCreated()
         {
@@ -70,6 +78,22 @@ namespace TextBoxEnhance.EditorTools
             m_LayoutDirty = true;
         }
 
+        /// <summary>
+        /// Draws with a particular font, or with the project default when null. Worth
+        /// setting to whatever the game ships: an effect that looks right on Latin can
+        /// sit badly on a script with marks above and below the line.
+        /// </summary>
+        public void SetFont(TMP_FontAsset font)
+        {
+            EnsureCreated();
+
+            if (m_Text.font == font || (font == null && m_Text.font == TMP_Settings.defaultFontAsset))
+                return;
+
+            m_Text.font = font != null ? font : TMP_Settings.defaultFontAsset;
+            m_LayoutDirty = true;
+        }
+
         /// <summary>Forces the next draw to re-lay out the text, e.g. after the font changes.</summary>
         public void MarkDirty()
         {
@@ -85,6 +109,12 @@ namespace TextBoxEnhance.EditorTools
             m_Text.ForceMeshUpdate();
 
             m_Cache = TextMeshAnimator.Cache(m_Text);
+
+            // Thai sample text is worth previewing correctly too: without this the
+            // vowels animate off the consonants they belong to.
+            int clusters = TextClusters.Build(m_Text.textInfo, ref m_ClusterOf, ref m_ClusterBase);
+            m_Clusters = new ClusterMap(m_ClusterOf, m_ClusterBase, clusters);
+
             m_LayoutDirty = false;
         }
 
@@ -124,7 +154,7 @@ namespace TextBoxEnhance.EditorTools
                 RebuildLayout();
 
             TextMeshAnimator.Apply(m_Text, m_Cache, RangesFor(draft), time, 1f / 60f,
-                FullyRevealed.Instance, RevealSettings.None);
+                FullyRevealed.Instance, RevealSettings.None, m_Clusters);
 
             FrameCamera(rect);
 
