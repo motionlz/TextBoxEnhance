@@ -16,23 +16,33 @@ namespace TextBoxEnhance.EditorTools
     /// </remarks>
     internal static class EffectLayerGui
     {
-        /// <summary>Draws the layer's body. Returns true if the layer asked to be removed.</summary>
-        public static bool Draw(SerializedProperty layer, int index, bool advanced)
+        private static EditorUi.RowAction s_PendingAction;
+        private static int s_PendingRow = -1;
+        private static int s_CurrentRow = -1;
+
+        /// <summary>
+        /// Draws one layer as a collapsible row. Collapsed, the header alone says what
+        /// the layer does, which is what makes a five layer effect readable at a glance.
+        /// </summary>
+        public static void Draw(SerializedProperty layer, int index, bool advanced)
         {
-            bool remove = false;
+            SerializedProperty channel = layer.FindPropertyRelative("Channel");
+            SerializedProperty motion = layer.FindPropertyRelative("Motion");
+
+            s_CurrentRow = index;
+
+            var header = new GUIContent($"{index + 1}.   {Summary(layer, channel, motion)}");
+            layer.isExpanded = EditorGUILayout.BeginFoldoutHeaderGroup(
+                layer.isExpanded, header, null, ShowRowMenu);
+
+            if (!layer.isExpanded)
+            {
+                EditorGUILayout.EndFoldoutHeaderGroup();
+                return;
+            }
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                SerializedProperty channel = layer.FindPropertyRelative("Channel");
-                SerializedProperty motion = layer.FindPropertyRelative("Motion");
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.LabelField($"{index + 1}. {Title(channel, motion)}", EditorStyles.boldLabel);
-                    if (GUILayout.Button("Remove", EditorStyles.miniButton, GUILayout.Width(64f)))
-                        remove = true;
-                }
-
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(channel, new GUIContent("Moves"));
                 if (EditorGUI.EndChangeCheck())
@@ -66,18 +76,113 @@ namespace TextBoxEnhance.EditorTools
                 DrawTiming(layer, motionValue, advanced);
 
                 if (advanced)
-    EditorGUILayout.PropertyField(layer.FindPropertyRelative("Timebase"), new GUIContent("Driven by"));
+                {
+                    EditorGUILayout.PropertyField(layer.FindPropertyRelative("Timebase"),
+                        new GUIContent("Driven by"));
+                }
             }
 
-            return remove;
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
-        private static string Title(SerializedProperty channel, SerializedProperty motion)
+        /// <summary>The menu behind the header's dots: everything that moves or copies a row.</summary>
+        private static void ShowRowMenu(Rect rect)
         {
-            string channelName = ObjectNames.NicifyVariableName(
-                ((EffectChannel)channel.enumValueIndex).ToString());
-            string motionName = ((EffectMotion)motion.enumValueIndex).ToString();
-            return channelName + "  -  " + motionName;
+            int row = s_CurrentRow;
+
+            var menu = new GenericMenu();
+            menu.AddItem(new GUIContent("Move up"), false, () => Remember(row, EditorUi.RowAction.MoveUp));
+            menu.AddItem(new GUIContent("Move down"), false, () => Remember(row, EditorUi.RowAction.MoveDown));
+            menu.AddItem(new GUIContent("Duplicate"), false, () => Remember(row, EditorUi.RowAction.Duplicate));
+            menu.AddSeparator(string.Empty);
+            menu.AddItem(new GUIContent("Remove"), false, () => Remember(row, EditorUi.RowAction.Remove));
+            menu.DropDown(rect);
+        }
+
+        private static void Remember(int row, EditorUi.RowAction action)
+        {
+            s_PendingRow = row;
+            s_PendingAction = action;
+        }
+
+        /// <summary>
+        /// The row a menu choice was made on, and what was chosen. Reading it clears it,
+        /// because a GenericMenu fires its callback long after the GUI pass that opened
+        /// it -- there is no way to return the answer from Draw.
+        /// </summary>
+        public static bool TryTakePendingAction(out int row, out EditorUi.RowAction action)
+        {
+            row = s_PendingRow;
+            action = s_PendingAction;
+
+            bool any = action != EditorUi.RowAction.None && row >= 0;
+            s_PendingAction = EditorUi.RowAction.None;
+            s_PendingRow = -1;
+            return any;
+        }
+
+        /// <summary>
+        /// What the layer does, in one line: what it moves, how, and how far. This is
+        /// the whole of a collapsed row, so it has to answer "what is this layer for"
+        /// without being opened.
+        /// </summary>
+        private static string Summary(SerializedProperty layer, SerializedProperty channel,
+            SerializedProperty motion)
+        {
+            var channelValue = (EffectChannel)channel.enumValueIndex;
+            var motionValue = (EffectMotion)motion.enumValueIndex;
+            var target = (LayerTarget)layer.FindPropertyRelative("Target").enumValueIndex;
+
+            string line = ChannelName(channelValue) + "   ·   " + motionValue.ToString().ToLowerInvariant();
+
+            string amount = AmountSummary(layer, channelValue);
+            if (!string.IsNullOrEmpty(amount))
+                line += "   ·   " + amount;
+
+            if (target == LayerTarget.MarksOnly)
+                line += "   ·   marks only";
+            else if (target == LayerTarget.BaseLetterOnly)
+                line += "   ·   base only";
+
+            return line;
+        }
+
+        /// <summary>Plain names for the channels, rather than the field names.</summary>
+        private static string ChannelName(EffectChannel channel)
+        {
+            switch (channel)
+            {
+                case EffectChannel.OffsetX: return "Sideways";
+                case EffectChannel.OffsetY: return "Up and down";
+                case EffectChannel.Rotation: return "Rotation";
+                case EffectChannel.ScaleX: return "Width";
+                case EffectChannel.ScaleY: return "Height";
+                case EffectChannel.Scale: return "Size";
+                case EffectChannel.Alpha: return "Opacity";
+                default: return "Colour";
+            }
+        }
+
+        private static string AmountSummary(SerializedProperty layer, EffectChannel channel)
+        {
+            float min = layer.FindPropertyRelative("Min").floatValue;
+            float max = layer.FindPropertyRelative("Max").floatValue;
+
+            switch (channel)
+            {
+                case EffectChannel.Alpha:
+                    return $"{min:0.##} to {max:0.##}";
+
+                case EffectChannel.Colour:
+                    return ((ColourMode)layer.FindPropertyRelative("ColourMode").enumValueIndex)
+                        .ToString().ToLowerInvariant();
+
+                case EffectChannel.Rotation:
+                    return $"{(max - min) * 0.5f:0.#} deg";
+
+                default:
+                    return $"{(max - min) * 0.5f:0.###} em";
+            }
         }
 
         /// <summary>

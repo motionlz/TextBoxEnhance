@@ -105,13 +105,13 @@ namespace TextBoxEnhance.EditorTools
 
             DrawPreview();
             DrawPreviewControls();
-            EditorGUILayout.Space(4f);
-            DrawIdentity();
 
             m_Scroll = EditorGUILayout.BeginScrollView(m_Scroll);
+            DrawIdentity();
             DrawLayers();
-            EditorGUILayout.Space(6f);
+            EditorGUILayout.Space(10f);
             DrawPresetBar("Add a layer from");
+            EditorGUILayout.Space(8f);
             EditorGUILayout.EndScrollView();
 
             m_Serialized.ApplyModifiedProperties();
@@ -198,6 +198,7 @@ namespace TextBoxEnhance.EditorTools
                     m_Time = EditorGUILayout.Slider(m_Time, 0f, 10f);
             }
 
+            EditorGUILayout.Space(2f);
             m_Sample = EditorGUILayout.TextField("Sample text", m_Sample);
             m_FontSize = EditorGUILayout.Slider("Text size", m_FontSize, 8f, 96f);
             m_Zoom = EditorGUILayout.Slider(new GUIContent("Zoom",
@@ -261,6 +262,8 @@ namespace TextBoxEnhance.EditorTools
 
         private void DrawIdentity()
         {
+            EditorUi.Section("Effect");
+
             SerializedProperty tag = m_Serialized.FindProperty("m_Tag");
             EditorGUILayout.PropertyField(tag, new GUIContent("Tag",
                 "The word you write in angle brackets to use this effect."));
@@ -289,28 +292,65 @@ namespace TextBoxEnhance.EditorTools
         {
             SerializedProperty layers = m_Serialized.FindProperty("m_Layers");
 
+            EditorUi.Section(layers.arraySize == 1 ? "1 layer" : $"{layers.arraySize} layers");
+
             if (layers.arraySize == 0)
             {
-                EditorGUILayout.HelpBox("No layers yet. Add one from a preset below.", MessageType.None);
+                EditorGUILayout.HelpBox(
+                    "An effect is a stack of layers. Each one moves a single thing -- position, " +
+                    "rotation, size, opacity or colour -- in a single way. Start from a preset below.",
+                    MessageType.None);
             }
 
-            int removeAt = -1;
             for (int i = 0; i < layers.arraySize; i++)
-            {
-                if (EffectLayerGui.Draw(layers.GetArrayElementAtIndex(i), i, m_Advanced))
-                    removeAt = i;
-            }
+                EffectLayerGui.Draw(layers.GetArrayElementAtIndex(i), i, m_Advanced);
 
-            if (removeAt >= 0)
-                layers.DeleteArrayElementAtIndex(removeAt);
+            if (EffectLayerGui.TryTakePendingAction(out int row, out EditorUi.RowAction action))
+                ApplyRowAction(layers, row, action);
 
-            if (GUILayout.Button("Add empty layer"))
+            EditorGUILayout.Space(4f);
+            if (GUILayout.Button("Add a layer", GUILayout.Height(22f)))
             {
                 layers.InsertArrayElementAtIndex(layers.arraySize);
                 m_Serialized.ApplyModifiedProperties();
                 ResetLayer(m_Asset.Layers[m_Asset.Layers.Count - 1]);
                 m_Serialized.Update();
+                layers.GetArrayElementAtIndex(layers.arraySize - 1).isExpanded = true;
             }
+        }
+
+        /// <summary>Carries out whatever a layer's row menu asked for.</summary>
+        private void ApplyRowAction(SerializedProperty layers, int row, EditorUi.RowAction action)
+        {
+            if (row < 0 || row >= layers.arraySize)
+                return;
+
+            switch (action)
+            {
+                case EditorUi.RowAction.Remove:
+                    layers.DeleteArrayElementAtIndex(row);
+                    break;
+
+                case EditorUi.RowAction.MoveUp:
+                    if (row > 0)
+                        layers.MoveArrayElement(row, row - 1);
+                    break;
+
+                case EditorUi.RowAction.MoveDown:
+                    if (row < layers.arraySize - 1)
+                        layers.MoveArrayElement(row, row + 1);
+                    break;
+
+                case EditorUi.RowAction.Duplicate:
+                    // Unity's insert copies the element it is inserted after, which for
+                    // once is exactly what duplicating wants.
+                    layers.InsertArrayElementAtIndex(row);
+                    break;
+            }
+
+            m_Serialized.ApplyModifiedProperties();
+            m_Serialized.Update();
+            Repaint();
         }
 
         /// <summary>
@@ -341,7 +381,7 @@ namespace TextBoxEnhance.EditorTools
 
         private void DrawPresetBar(string heading)
         {
-            EditorGUILayout.LabelField(heading, EditorStyles.miniBoldLabel);
+            EditorUi.Section(heading);
 
             float width = EditorGUIUtility.currentViewWidth - 24f;
             int perRow = Mathf.Max(1, Mathf.FloorToInt(width / 84f));
