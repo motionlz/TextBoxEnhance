@@ -85,6 +85,13 @@ namespace TextBoxEnhance
             TMP_TextInfo textInfo = target.textInfo;
             int charCount = textInfo.characterCount;
 
+            // TextMeshPro lays a character out at its point size only in orthographic
+            // mode; otherwise it shrinks the geometry by ten. TextMeshProUGUI turns that
+            // on for itself, a 3D TextMeshPro leaves it off, and characterInfo.pointSize
+            // reports the same number either way -- so treating point size as the em
+            // makes every effect ten times too strong on 3D text.
+            float emScale = target.isOrthographic ? 1f : 0.1f;
+
             for (int c = 0; c < charCount; c++)
             {
                 TMP_CharacterInfo character = textInfo.characterInfo[c];
@@ -141,7 +148,7 @@ namespace TextBoxEnhance
                     }
                 }
 
-                BakeCharacter(textInfo, cache, vertices, colors, vertexIndex, character, anchorIndex, ref mod);
+                BakeCharacter(textInfo, cache, vertices, colors, vertexIndex, character, anchorIndex, emScale, ref mod);
             }
 
             target.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
@@ -179,12 +186,12 @@ namespace TextBoxEnhance
         /// <summary>Writes one character's accumulated offsets into the TMP vertex arrays.</summary>
         private static void BakeCharacter(TMP_TextInfo textInfo, TMP_MeshInfo[] cache,
             Vector3[] vertices, Color32[] colors, int vertexIndex,
-            TMP_CharacterInfo character, int anchorIndex, ref CharacterMod mod)
+            TMP_CharacterInfo character, int anchorIndex, float emScale, ref CharacterMod mod)
         {
             TMP_CharacterInfo anchor = textInfo.characterInfo[anchorIndex];
 
             // Offsets arrive in em, so a 12pt and a 120pt label animate identically.
-            float em = anchor.pointSize > 0f ? anchor.pointSize : 1f;
+            float em = (anchor.pointSize > 0f ? anchor.pointSize : 1f) * emScale;
 
             // Rotate and scale around the base character's baseline centre, which is
             // where a reader expects a letter to pivot -- and, for a combining mark, the

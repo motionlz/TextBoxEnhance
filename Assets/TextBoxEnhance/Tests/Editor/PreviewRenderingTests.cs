@@ -39,11 +39,23 @@ namespace TextBoxEnhance.Tests
             m_Preview = null;
         }
 
-        private void Lay(string text)
+        /// <summary>
+        /// Lays text out, orthographic by default because that is the mode
+        /// TextMeshProUGUI puts itself in and so the one the package is judged against.
+        /// </summary>
+        private void Lay(string text, bool orthographic = true)
         {
+            m_Text.isOrthographic = orthographic;
             m_Text.fontSize = 36f;
             m_Text.text = text;
             m_Text.ForceMeshUpdate();
+        }
+
+        /// <summary>The height of a character in the units its geometry is laid out in.</summary>
+        private float LineHeight()
+        {
+            TMP_CharacterInfo character = m_Text.textInfo.characterInfo[0];
+            return character.ascender - character.descender;
         }
 
         private float VertexY(int charIndex)
@@ -119,6 +131,66 @@ namespace TextBoxEnhance.Tests
             {
                 Object.DestroyImmediate(asset);
             }
+        }
+
+        /// <summary>
+        /// Runs the same effect on the same text in both geometry modes and returns how
+        /// far a character moved as a fraction of the text's own height.
+        /// </summary>
+        private float TravelRelativeToTextHeight(bool orthographic)
+        {
+            Lay("AAAA", orthographic);
+
+            float textHeight = LineHeight();
+            TMP_MeshInfo[] cache = TextMeshAnimator.Cache(m_Text);
+            var asset = ScriptableObject.CreateInstance<TextEffectAsset>();
+
+            try
+            {
+                asset.Layers.AddRange(EffectPresets.Wave());
+
+                var ranges = new List<EffectRange>
+                {
+                    new EffectRange
+                    {
+                        Effect = new DataTextEffect(asset),
+                        Parameters = TagParams.Empty,
+                        Start = 0,
+                        End = m_Text.textInfo.characterCount,
+                    },
+                };
+
+                float peak = 0.25f / asset.Layers[0].Speed;
+
+                TextMeshAnimator.Apply(m_Text, cache, ranges, 0f, 1f / 60f,
+                    FullyRevealed.Instance, RevealSettings.None);
+                float resting = VertexY(0);
+
+                TextMeshAnimator.Apply(m_Text, cache, ranges, peak, 1f / 60f,
+                    FullyRevealed.Instance, RevealSettings.None);
+
+                return (VertexY(0) - resting) / textHeight;
+            }
+            finally
+            {
+                Object.DestroyImmediate(asset);
+            }
+        }
+
+        [Test]
+        public void TravelIsTheSameFractionOfTheTextWhicheverGeometryModeItIs()
+        {
+            // TextMeshPro lays a character out at its point size only in orthographic
+            // mode and shrinks the geometry by ten otherwise, while characterInfo reports
+            // the same point size either way. Reading point size as the em made every
+            // effect ten times too strong on a 3D TextMeshPro -- which looked like the
+            // tool and the game disagreeing about how far an effect moves.
+            float orthographic = TravelRelativeToTextHeight(true);
+            float perspective = TravelRelativeToTextHeight(false);
+
+            Assert.Greater(orthographic, 0f);
+            Assert.AreEqual(orthographic, perspective, orthographic * 0.02f,
+                "the same effect moved a different fraction of the text in the two modes");
         }
 
         [Test]
