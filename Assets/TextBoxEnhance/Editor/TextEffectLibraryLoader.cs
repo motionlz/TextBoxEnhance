@@ -81,9 +81,13 @@ namespace TextBoxEnhance.EditorTools
                 return existing;
             }
 
-            const string folder = "Assets/TextBoxEnhance/Effects";
+            // Deliberately outside the package folder. Installed from a git URL a package
+            // is read-only, so a library living inside it could never be added to -- the
+            // first press of Add to Library would fail and there would be no way to fix
+            // it short of copying the package into Assets.
+            const string folder = "Assets/TextBoxEnhance Effects";
             if (!AssetDatabase.IsValidFolder(folder))
-                AssetDatabase.CreateFolder("Assets/TextBoxEnhance", "Effects");
+                AssetDatabase.CreateFolder("Assets", "TextBoxEnhance Effects");
 
             var library = ScriptableObject.CreateInstance<TextEffectLibrary>();
             AssetDatabase.CreateAsset(library, folder + "/TextEffectLibrary.asset");
