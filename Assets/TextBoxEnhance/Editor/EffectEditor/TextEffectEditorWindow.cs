@@ -236,14 +236,14 @@ namespace TextBoxEnhance.EditorTools
 
         /// <summary>
         /// A freshly inserted array element copies the one before it, which is rarely
-        /// what someone adding a layer wants. Start it from a plain wave instead.
+        /// what someone adding a layer wants.
         /// </summary>
         private static void ResetLayer(EffectLayer layer)
         {
             if (layer == null)
                 return;
 
-            EffectLayer template = EffectPresets.Wave()[0];
+            EffectLayer template = EffectPresets.NewLayer();
             layer.Channel = template.Channel;
             layer.Motion = template.Motion;
             layer.Timebase = template.Timebase;
@@ -251,12 +251,13 @@ namespace TextBoxEnhance.EditorTools
             layer.Max = template.Max;
             layer.Speed = template.Speed;
             layer.Spread = template.Spread;
-            layer.Phase = 0f;
-            layer.Duty = 0.5f;
-            layer.Salt = 0;
-            layer.ColourMode = ColourMode.Solid;
-            layer.Colour = Color.white;
-            layer.Weight = 1f;
+            layer.Phase = template.Phase;
+            layer.Duty = template.Duty;
+            layer.Salt = template.Salt;
+            layer.AllowFlip = template.AllowFlip;
+            layer.ColourMode = template.ColourMode;
+            layer.Colour = template.Colour;
+            layer.Weight = template.Weight;
         }
 
         private void DrawPresetBar(string heading)

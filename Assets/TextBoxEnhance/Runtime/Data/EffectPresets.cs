@@ -55,6 +55,28 @@ namespace TextBoxEnhance.Data
 
         public static IReadOnlyList<Preset> All => s_All;
 
+        /// <summary>
+        /// What an added layer starts as. Deliberately gentler than any preset: a layer
+        /// appears next to whatever is already there, and one arriving at full strength
+        /// swamps the effect being built rather than adding to it.
+        /// </summary>
+        public static EffectLayer NewLayer()
+        {
+            return new EffectLayer
+            {
+                Channel = EffectChannel.OffsetY,
+                Motion = EffectMotion.Sine,
+                Timebase = EffectTimebase.Time,
+                Min = -0.05f,
+                Max = 0.05f,
+                Speed = 1f,
+                Spread = 0.1f,
+                Duty = 0.5f,
+                Weight = 1f,
+                Colour = Color.white,
+            };
+        }
+
         public static List<EffectLayer> Wave()
         {
             return One(new EffectLayer
