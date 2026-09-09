@@ -22,6 +22,7 @@ namespace TextBoxEnhance.EditorTools
         [SerializeField] private string m_Sample = "Animate this text";
         [SerializeField] private float m_FontSize = 36f;
         [SerializeField] private TMP_FontAsset m_PreviewFont;
+        [SerializeField] private float m_Zoom = 1f;
         [SerializeField] private bool m_Playing = true;
         [SerializeField] private bool m_Advanced;
         [SerializeField] private float m_Time;
@@ -163,7 +164,7 @@ namespace TextBoxEnhance.EditorTools
 
             m_Renderer.SetFont(m_PreviewFont);
             m_Renderer.SetSample(m_Sample, m_FontSize);
-            m_Renderer.Draw(rect, m_Asset, m_Time, background);
+            m_Renderer.Draw(rect, m_Asset, m_Time, background, m_Zoom);
         }
 
         /// <summary>
@@ -199,6 +200,9 @@ namespace TextBoxEnhance.EditorTools
 
             m_Sample = EditorGUILayout.TextField("Sample text", m_Sample);
             m_FontSize = EditorGUILayout.Slider("Text size", m_FontSize, 8f, 96f);
+            m_Zoom = EditorGUILayout.Slider(new GUIContent("Zoom",
+                "Magnifies the preview without changing anything about the effect. " +
+                "Text size is what the game uses."), m_Zoom, 1f, 8f);
             m_PreviewFont = (TMP_FontAsset)EditorGUILayout.ObjectField(
                 new GUIContent("Font", "Leave empty to use the project's default TextMeshPro font."),
                 m_PreviewFont, typeof(TMP_FontAsset), false);
@@ -217,10 +221,14 @@ namespace TextBoxEnhance.EditorTools
         {
             float travel = LargestTravelEm();
 
+            string size = m_Zoom > 1.01f
+                ? $"Magnified {m_Zoom:0.#}x for a closer look; the game draws it at 1x. "
+                : "Shown at the size the game draws it. ";
+
             string note = travel > 0f
-                ? $"Actual size. Largest travel {travel:0.###} em, which is {travel * m_FontSize:0.##} pt " +
+                ? size + $"Largest travel {travel:0.###} em, which is {travel * m_FontSize:0.##} pt " +
                   "at this text size and scales with it."
-                : "Actual size: a point in here is a point in the game.";
+                : size;
 
             EditorGUILayout.LabelField(note, EditorStyles.miniLabel);
         }

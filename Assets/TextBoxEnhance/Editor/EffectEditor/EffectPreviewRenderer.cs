@@ -64,6 +64,12 @@ namespace TextBoxEnhance.EditorTools
             m_Text.enableAutoSizing = false;
             m_Text.color = Color.white;
 
+            // A 3D TextMeshPro shrinks its geometry by ten unless this is on, while a
+            // TextMeshProUGUI turns it on for itself. Leaving it off would draw the
+            // preview at a tenth of the size the game does, and make every effect look
+            // ten times stronger in here than it is.
+            m_Text.isOrthographic = true;
+
             m_Preview.AddSingleGO(m_TextObject);
         }
 
@@ -143,7 +149,7 @@ namespace TextBoxEnhance.EditorTools
         }
 
         /// <summary>Draws one animated frame of the sample into <paramref name="rect"/>.</summary>
-        public void Draw(Rect rect, TextEffectAsset draft, float time, Color background)
+        public void Draw(Rect rect, TextEffectAsset draft, float time, Color background, float zoom = 1f)
         {
             if (rect.width < 4f || rect.height < 4f || Event.current.type != EventType.Repaint)
                 return;
@@ -156,7 +162,7 @@ namespace TextBoxEnhance.EditorTools
             TextMeshAnimator.Apply(m_Text, m_Cache, RangesFor(draft), time, 1f / 60f,
                 FullyRevealed.Instance, RevealSettings.None, m_Clusters);
 
-            FrameCamera(rect);
+            FrameCamera(rect, zoom);
 
             m_Preview.camera.backgroundColor = background;
             m_Preview.BeginPreview(rect, GUIStyle.none);
@@ -177,12 +183,13 @@ namespace TextBoxEnhance.EditorTools
         /// shows has to be the thing that ships, even when that means an effect looking
         /// smaller in here than anyone would like.
         /// </remarks>
-        private void FrameCamera(Rect rect)
+        private void FrameCamera(Rect rect, float zoom)
         {
             Bounds bounds = m_Text.bounds;
 
             m_Preview.camera.aspect = rect.width / Mathf.Max(1f, rect.height);
-            m_Preview.camera.orthographicSize = Mathf.Max(1f, rect.height * 0.5f);
+            m_Preview.camera.orthographicSize =
+                Mathf.Max(1f, rect.height * 0.5f / Mathf.Max(0.1f, zoom));
             m_Preview.camera.transform.position = new Vector3(bounds.center.x, bounds.center.y, -10f);
         }
 
