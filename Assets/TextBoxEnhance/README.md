@@ -130,3 +130,49 @@ on the class. `context.Seed` gives a stable per-character random value, and
   as none. If you need a literal `<` in the text, wrap it in `<noparse>`.
 - Setting `.text` on the TMP component directly bypasses the tag parser. Assign
   `AnimatedTextBox.Text` or call `Play(string)` instead.
+
+## Making your own effects without code
+
+**Tools > TextBox Enhance > Text Effect Editor.**
+
+Pick a preset, watch it move, drag the sliders until it feels right, save. The effect
+gets a tag of its own and works in any text box straight away.
+
+### An effect is a stack of layers
+
+Each layer moves **one thing** in **one way**:
+
+| Moves | How |
+| --- | --- |
+| Left/right, up/down, rotation, size, opacity, colour | Sine, Bounce, Drift, Shake, Jitter, Ramp, Blink, a curve you draw, or nothing |
+
+`<wave>` is one layer. `<wobble>` is two — one for each axis. Stack more and they add
+together, so a layer that lifts and a layer that recolours become one effect.
+
+Three controls carry most of the work:
+
+- **Distance / Angle / Amount** — how far it travels
+- **Speed** — how many times per second
+- **Offset per letter** — how far each letter lags the one before it. This is what turns
+  a nodding letter into a wave travelling along a word.
+
+**Advanced** reveals the rest: resting position, phase, randomness seed, and whether the
+layer runs off the clock or off the character's entrance. That last one is worth knowing
+about — set a layer to **Reveal progress** and it plays once as the typewriter reaches
+each character, instead of looping forever.
+
+### Colour layers
+
+Three modes: a flat **colour**, a **gradient** the motion sweeps through, or a **hue
+sweep** for the rainbow. Gradients use Unity's own gradient editor, so a fire or ice
+effect is a couple of colour stops rather than a formula.
+
+### Using your effect
+
+An effect named `sparkle` is written `<sparkle>like this</sparkle>`, and takes the same
+attributes as a built-in — `<sparkle a=2>` for twice the travel, `f=` for speed, `w=` for
+the per-letter offset. Those scale every layer at once.
+
+Effects live in a **library asset** that the editor keeps up to date and adds to the
+build's preloaded assets. If a tag works in the editor and not in a build, the library
+is the first thing to check.
