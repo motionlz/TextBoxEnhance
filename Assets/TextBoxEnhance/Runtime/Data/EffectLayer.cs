@@ -26,6 +26,10 @@ namespace TextBoxEnhance.Data
         [Tooltip("Whether the motion runs off the clock or off the character's entrance.")]
         public EffectTimebase Timebase = EffectTimebase.Time;
 
+        [Tooltip("Which part of a letter this layer moves. Only matters for scripts that " +
+                 "write marks above or below a base, such as Thai.")]
+        public LayerTarget Target = LayerTarget.WholeLetter;
+
         [Tooltip("Value when the motion is at 0.")]
         public float Min = -0.15f;
 
@@ -81,8 +85,20 @@ namespace TextBoxEnhance.Data
         /// </param>
         public void Apply(in TextEffectContext context, in LayerScale scale, ref CharacterMod mod)
         {
+            if (!Covers(context))
+                return;
+
             float time = Timebase == EffectTimebase.Time ? context.Time : context.RevealProgress;
-            float normalised = EvaluateMotion(time, context.CharIndex, context.Seed, scale);
+
+            // Marks moving on their own get their own phase and their own randomness,
+            // which is the whole point: sharing the letter's would move them in lockstep
+            // with the base they are supposed to be coming away from.
+            int phaseIndex = Target == LayerTarget.MarksOnly ? context.CharacterIndex : context.CharIndex;
+            float seed = Target == LayerTarget.MarksOnly
+                ? TextEffectContext.Hash01(context.CharacterIndex)
+                : context.Seed;
+
+            float normalised = EvaluateMotion(time, phaseIndex, seed, scale);
 
             // Amount scales around the layer's midpoint, so turning a wave up makes it
             // taller rather than sliding the whole line off its baseline.
@@ -188,6 +204,22 @@ namespace TextBoxEnhance.Data
 
                 default:
                     return Colour;
+            }
+        }
+
+        /// <summary>Whether this layer touches the character the context describes.</summary>
+        private bool Covers(in TextEffectContext context)
+        {
+            switch (Target)
+            {
+                case LayerTarget.BaseLetterOnly:
+                    return !context.IsMark;
+
+                case LayerTarget.MarksOnly:
+                    return context.IsMark;
+
+                default:
+                    return true;
             }
         }
 

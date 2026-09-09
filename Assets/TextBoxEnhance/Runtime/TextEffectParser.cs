@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TextBoxEnhance.Data;
 using UnityEngine;
 
 namespace TextBoxEnhance
@@ -231,11 +232,28 @@ namespace TextBoxEnhance
                     Parameters = tag.Parameters,
                     Start = tag.Start,
                     End = end,
+                    Target = ReadTarget(tag.Parameters),
                 });
             }
         }
 
+        /// <summary>
+        /// Reads the bare flags that aim a tag at part of a letter, for scripts that
+        /// write marks above or below a base.
+        /// </summary>
+        private static LayerTarget ReadTarget(TagParams parameters)
+        {
+            if (parameters == null)
+                return LayerTarget.WholeLetter;
+
+            if (parameters.Has("marks"))
+                return LayerTarget.MarksOnly;
+
+            return parameters.Has("base") ? LayerTarget.BaseLetterOnly : LayerTarget.WholeLetter;
+        }
+
         /// <summary>Reads <c>=value</c> and any <c>key=value</c> attributes from a tag body.</summary>
+
         private static TagParams ReadParameters(string source, int start, int end)
         {
             if (start >= end)

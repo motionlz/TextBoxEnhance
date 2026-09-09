@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TextBoxEnhance.Data;
 using System.Text;
 using UnityEngine;
 
@@ -15,6 +16,12 @@ namespace TextBoxEnhance
 
         /// <summary>One past the last character the tag covers.</summary>
         public int End;
+
+        /// <summary>
+        /// Which part of a letter the tag asked for: <c>&lt;shake marks&gt;</c> rattles
+        /// the tone marks over a steady word, <c>&lt;shake base&gt;</c> does the reverse.
+        /// </summary>
+        public LayerTarget Target;
 
         public bool Covers(int charIndex) => charIndex >= Start && charIndex < End;
     }

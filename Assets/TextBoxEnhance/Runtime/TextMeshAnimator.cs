@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TextBoxEnhance.Data;
 using TMPro;
 using UnityEngine;
 
@@ -111,6 +112,7 @@ namespace TextBoxEnhance
                 // like.
                 int cluster = clusters.ClusterFor(c);
                 int anchorIndex = clusters.BaseFor(c);
+                bool isMark = anchorIndex != c;
 
                 CharacterMod mod = CharacterMod.Identity;
                 RevealAnimator.Apply(reveal.Style, reveal.Shape(progress), reveal.Distance, reveal.Spins, ref mod);
@@ -125,8 +127,16 @@ namespace TextBoxEnhance
                         if (anchorIndex < range.Start || anchorIndex >= range.End)
                             continue;
 
+                        // <shake marks> rattles the tone marks over a word that holds
+                        // still; <shake base> slides the word out from under them.
+                        if (range.Target == LayerTarget.BaseLetterOnly && isMark)
+                            continue;
+
+                        if (range.Target == LayerTarget.MarksOnly && !isMark)
+                            continue;
+
                         var context = new TextEffectContext(textInfo, cluster, anchorIndex - range.Start,
-                            range.End - range.Start, time, deltaTime, progress);
+                            range.End - range.Start, time, deltaTime, progress, c, isMark);
                         range.Effect.Apply(in context, range.Parameters, ref mod);
                     }
                 }
