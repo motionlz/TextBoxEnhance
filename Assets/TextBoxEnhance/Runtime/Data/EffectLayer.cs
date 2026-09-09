@@ -51,6 +51,10 @@ namespace TextBoxEnhance.Data
         [Tooltip("Shape for the Curve motion, sampled across one cycle.")]
         public AnimationCurve Curve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+        [Tooltip("Lets a scale layer pass through zero and turn the character inside out. " +
+                 "Off keeps it the right way round however far the scale swings.")]
+        public bool AllowFlip;
+
         [Header("Colour")]
         public ColourMode ColourMode = ColourMode.Solid;
 
@@ -101,17 +105,20 @@ namespace TextBoxEnhance.Data
                     break;
 
                 case EffectChannel.ScaleX:
-                    mod.Scale.x *= value;
+                    mod.Scale.x *= Scaled(value);
                     break;
 
                 case EffectChannel.ScaleY:
-                    mod.Scale.y *= value;
+                    mod.Scale.y *= Scaled(value);
                     break;
 
                 case EffectChannel.Scale:
-                    mod.Scale.x *= value;
-                    mod.Scale.y *= value;
+                {
+                    float uniform = Scaled(value);
+                    mod.Scale.x *= uniform;
+                    mod.Scale.y *= uniform;
                     break;
+                }
 
                 case EffectChannel.Alpha:
                     mod.MultiplyAlpha(value);
@@ -182,6 +189,15 @@ namespace TextBoxEnhance.Data
                 default:
                     return Colour;
             }
+        }
+
+        /// <summary>
+        /// A scale on its way through zero would mirror the character, which reads as a
+        /// glitch far more often than it reads as an effect, so it is opt-in.
+        /// </summary>
+        private float Scaled(float value)
+        {
+            return AllowFlip ? value : Mathf.Max(0f, value);
         }
 
         /// <summary>
