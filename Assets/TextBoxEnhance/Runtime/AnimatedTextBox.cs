@@ -19,7 +19,7 @@ namespace TextBoxEnhance
     [AddComponentMenu("TextBox Enhance/Animated Text Box")]
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public sealed class AnimatedTextBox : MonoBehaviour
+    public sealed class AnimatedTextBox : MonoBehaviour, ICharacterRevealSource
     {
         /// <summary>Raised with the character index each time the typewriter reveals one.</summary>
         [Serializable]
@@ -267,7 +267,7 @@ namespace TextBoxEnhance
             if (textInfo == null)
                 return;
 
-            m_CachedMeshInfo = textInfo.CopyMeshInfoVertexData();
+            m_CachedMeshInfo = TextMeshAnimator.Cache(m_Target);
 
             int count = textInfo.characterCount;
             if (m_CharRevealStart == null || m_CharRevealStart.Length < count)
@@ -482,7 +482,7 @@ namespace TextBoxEnhance
         }
 
         /// <summary>How far a character is through its entrance, 0 while still hidden.</summary>
-        private float RevealProgress(int charIndex)
+        public float RevealProgressOf(int charIndex)
         {
             if (m_CharRevealStart == null || charIndex >= m_CharRevealStart.Length)
                 return 1f;
@@ -516,136 +516,15 @@ namespace TextBoxEnhance
             m_WasAnimating = animating;
             m_GeometryDirty = false;
 
-            if (!RestoreOriginalGeometry(textInfo))
-                return;
+            var reveal = new RevealSettings(m_RevealStyle, m_RevealEase, m_RevealDistance, m_RevealSpins);
 
-            List<EffectRange> effects = m_Parsed.Effects;
-
-            for (int c = 0; c < charCount; c++)
+            if (!TextMeshAnimator.Apply(m_Target, m_CachedMeshInfo, m_Parsed.Effects,
+                    m_Time, deltaTime, this, reveal))
             {
-                TMP_CharacterInfo character = textInfo.characterInfo[c];
-                if (!character.isVisible)
-                    continue;
-
-                int materialIndex = character.materialReferenceIndex;
-                int vertexIndex = character.vertexIndex;
-                Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
-                Color32[] colors = textInfo.meshInfo[materialIndex].colors32;
-
-                if (vertexIndex + 3 >= vertices.Length)
-                    continue;
-
-                float reveal = RevealProgress(c);
-                if (reveal <= 0f)
-                {
-                    HideCharacter(colors, vertexIndex);
-                    continue;
-                }
-
-                CharacterMod mod = CharacterMod.Identity;
-                float eased = m_RevealEase != null && m_RevealEase.length > 0 ? m_RevealEase.Evaluate(reveal) : reveal;
-                RevealAnimator.Apply(m_RevealStyle, eased, m_RevealDistance, m_RevealSpins, ref mod);
-
-                for (int e = 0; e < effects.Count; e++)
-                {
-                    EffectRange range = effects[e];
-                    if (c < range.Start || c >= range.End)
-                        continue;
-
-                    var context = new TextEffectContext(textInfo, c, c - range.Start, range.End - range.Start,
-                        m_Time, deltaTime, reveal);
-                    range.Effect.Apply(in context, range.Parameters, ref mod);
-                }
-
-                BakeCharacter(vertices, colors, vertexIndex, character, ref mod);
-            }
-
-            m_Target.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
-        }
-
-        /// <summary>
-        /// Copies TextMeshPro's untouched geometry back over the working arrays, so each
-        /// frame's offsets are applied to the layout rather than to last frame's result.
-        /// </summary>
-        private bool RestoreOriginalGeometry(TMP_TextInfo textInfo)
-        {
-            int materialCount = textInfo.materialCount;
-            if (m_CachedMeshInfo.Length < materialCount)
-            {
+                // TextMeshPro re-laid the text out behind us; take a fresh copy and
+                // pick it up next frame.
                 CacheGeometry();
-                return false;
-            }
-
-            for (int m = 0; m < materialCount; m++)
-            {
-                Vector3[] sourceVertices = m_CachedMeshInfo[m].vertices;
-                Vector3[] targetVertices = textInfo.meshInfo[m].vertices;
-                Color32[] sourceColors = m_CachedMeshInfo[m].colors32;
-                Color32[] targetColors = textInfo.meshInfo[m].colors32;
-
-                if (sourceVertices == null || targetVertices == null
-                    || sourceVertices.Length != targetVertices.Length
-                    || sourceColors == null || targetColors == null
-                    || sourceColors.Length != targetColors.Length)
-                {
-                    // TMP re-laid the text out between our cache and now; take a fresh copy.
-                    CacheGeometry();
-                    return false;
-                }
-
-                Array.Copy(sourceVertices, targetVertices, sourceVertices.Length);
-                Array.Copy(sourceColors, targetColors, sourceColors.Length);
-            }
-
-            return true;
-        }
-
-        private static void HideCharacter(Color32[] colors, int vertexIndex)
-        {
-            for (int k = 0; k < 4; k++)
-            {
-                Color32 color = colors[vertexIndex + k];
-                color.a = 0;
-                colors[vertexIndex + k] = color;
-            }
-        }
-
-        /// <summary>Writes one character's accumulated offsets into the TMP vertex arrays.</summary>
-        private static void BakeCharacter(Vector3[] vertices, Color32[] colors, int vertexIndex,
-            TMP_CharacterInfo character, ref CharacterMod mod)
-        {
-            // Offsets arrive in em, so a 12pt and a 120pt label animate identically.
-            float em = character.pointSize > 0f ? character.pointSize : 1f;
-
-            // Rotate and scale around the character's own baseline centre, which is where
-            // a reader expects a letter to pivot.
-            var pivot = new Vector3(
-                (vertices[vertexIndex].x + vertices[vertexIndex + 2].x) * 0.5f,
-                character.baseLine,
-                0f);
-
-            var matrix = Matrix4x4.TRS(
-                new Vector3(mod.Offset.x * em, mod.Offset.y * em, 0f),
-                Quaternion.Euler(0f, 0f, mod.Rotation),
-                new Vector3(mod.Scale.x, mod.Scale.y, 1f));
-
-            for (int k = 0; k < 4; k++)
-                vertices[vertexIndex + k] = matrix.MultiplyPoint3x4(vertices[vertexIndex + k] - pivot) + pivot;
-
-            for (int k = 0; k < 4; k++)
-            {
-                Color color = colors[vertexIndex + k];
-                color *= mod.ColorMultiply;
-
-                if (mod.ColorOverrideWeight > 0f)
-                {
-                    // Only the hue is replaced; alpha stays with the typewriter and <fade>.
-                    color.r = Mathf.Lerp(color.r, mod.ColorOverride.r, mod.ColorOverrideWeight);
-                    color.g = Mathf.Lerp(color.g, mod.ColorOverride.g, mod.ColorOverrideWeight);
-                    color.b = Mathf.Lerp(color.b, mod.ColorOverride.b, mod.ColorOverrideWeight);
-                }
-
-                colors[vertexIndex + k] = color;
+                m_GeometryDirty = true;
             }
         }
     }
