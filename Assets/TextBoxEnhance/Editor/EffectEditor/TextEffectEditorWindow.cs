@@ -201,8 +201,9 @@ namespace TextBoxEnhance.EditorTools
             m_Sample = EditorGUILayout.TextField("Sample text", m_Sample);
             m_FontSize = EditorGUILayout.Slider("Text size", m_FontSize, 8f, 96f);
             m_Zoom = EditorGUILayout.Slider(new GUIContent("Zoom",
-                "Magnifies the preview without changing anything about the effect. " +
-                "Text size is what the game uses."), m_Zoom, 1f, 8f);
+                "Scales the preview without changing anything about the effect. Below 1 " +
+                "to fit a long sample in, above 1 to look closely. Text size is what the " +
+                "game uses."), m_Zoom, 0.25f, 8f);
             m_PreviewFont = (TMP_FontAsset)EditorGUILayout.ObjectField(
                 new GUIContent("Font", "Leave empty to use the project's default TextMeshPro font."),
                 m_PreviewFont, typeof(TMP_FontAsset), false);
@@ -221,9 +222,13 @@ namespace TextBoxEnhance.EditorTools
         {
             float travel = LargestTravelEm();
 
-            string size = m_Zoom > 1.01f
-                ? $"Magnified {m_Zoom:0.#}x for a closer look; the game draws it at 1x. "
-                : "Shown at the size the game draws it. ";
+            string size;
+            if (m_Zoom > 1.01f)
+                size = $"Magnified {m_Zoom:0.##}x for a closer look; the game draws it at 1x. ";
+            else if (m_Zoom < 0.99f)
+                size = $"Shrunk to {m_Zoom:0.##}x to fit; the game draws it at 1x. ";
+            else
+                size = "Shown at the size the game draws it. ";
 
             string note = travel > 0f
                 ? size + $"Largest travel {travel:0.###} em, which is {travel * m_FontSize:0.##} pt " +

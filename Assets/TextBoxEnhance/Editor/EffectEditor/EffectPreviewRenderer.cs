@@ -70,6 +70,14 @@ namespace TextBoxEnhance.EditorTools
             // ten times stronger in here than it is.
             m_Text.isOrthographic = true;
 
+            // Its container is sized for that tenth-scale geometry, a fifth of a unit
+            // across, so full-size text wrapped after two or three letters. A preview
+            // wants one line anyway: wrapping tells you nothing about an effect and
+            // hides half the sample.
+            m_Text.textWrappingMode = TextWrappingModes.NoWrap;
+            m_Text.overflowMode = TextOverflowModes.Overflow;
+            m_TextObject.GetComponent<RectTransform>().sizeDelta = new Vector2(4000f, 400f);
+
             m_Preview.AddSingleGO(m_TextObject);
         }
 
